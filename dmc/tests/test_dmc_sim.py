@@ -6,8 +6,8 @@ from dmc import dmc_sim
 class DMCTestCaseDMC(unittest.TestCase):
     """Tests for dmc_sim()"""
  
-    rt_tolerance = 2    # ms
-    sd_tolerance = 2    # ms
+    rt_tolerance = 3    # ms
+    sd_tolerance = 3    # ms
     err_tolerance = 0.5 # %
     
     def test_dmc_sim1(self):

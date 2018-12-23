@@ -107,13 +107,15 @@ def simulation(amp=20, tau=30, aa_shape=2, mu=0.5, sigma=4, bnds=75,
     x_i = np.cumsum(x_i, 1)
 
     # reaction time
-    rt_c = np.argmax(np.abs(x_c) >= bnds, axis=1) + 1
-    rt_i = np.argmax(np.abs(x_i) >= bnds, axis=1) + 1
-
+    rt_c = np.argmax(np.abs(x_c) > bnds, axis=1) + 1
+    rt_c[rt_c == 1] = t_max
+    rt_i = np.argmax(np.abs(x_i) > bnds, axis=1) + 1
+    rt_i[rt_i == 1] = t_max
+    
     rt_c = np.vstack((rt_c + np.random.normal(res_mean, res_sd, num_trls),
-                      x_c[np.arange(len(x_c)), rt_c - 1] < 0))
+                      x_c[np.arange(len(x_c)), rt_c - 1] < bnds))
     rt_i = np.vstack((rt_i + np.random.normal(res_mean, res_sd, num_trls),
-                      x_i[np.arange(len(x_c)), rt_i - 1] < 0))
+                      x_i[np.arange(len(x_c)), rt_i - 1] < bnds))
 
     # calculate conditional accuracy function (CAF) values
     caf_c = calc_caf_values(rt_c)
