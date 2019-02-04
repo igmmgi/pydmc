@@ -6,4 +6,6 @@ setup(name='dmc',
       author='IGM',
       packages=['dmc'],
       license='MIT',
-      zip_safe=False)
+      install_requires=['matplotlib', 'numpy', 'pandas', 'seaborn'],
+      zip_safe=False
+      )

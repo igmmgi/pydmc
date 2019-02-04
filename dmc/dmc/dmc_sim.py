@@ -111,7 +111,7 @@ def simulation(amp=20, tau=30, aa_shape=2, mu=0.5, sigma=4, bnds=75,
     rt_c[rt_c == 1] = t_max
     rt_i = np.argmax(np.abs(x_i) > bnds, axis=1) + 1
     rt_i[rt_i == 1] = t_max
-    
+
     rt_c = np.vstack((rt_c + np.random.normal(res_mean, res_sd, num_trls),
                       x_c[np.arange(len(x_c)), rt_c - 1] < bnds))
     rt_i = np.vstack((rt_i + np.random.normal(res_mean, res_sd, num_trls),
@@ -120,7 +120,7 @@ def simulation(amp=20, tau=30, aa_shape=2, mu=0.5, sigma=4, bnds=75,
     # calculate conditional accuracy function (CAF) values
     caf_c = calc_caf_values(rt_c)
     caf_i = calc_caf_values(rt_i)
-    
+
     # calculate compatibility effect + delta values for correct trials
     time_delta, effect_delta = calc_delta_values(rt_c[0], rt_i[0])
 
@@ -173,7 +173,7 @@ def simulation(amp=20, tau=30, aa_shape=2, mu=0.5, sigma=4, bnds=75,
         plt.ylim([0, 1.01])
         plt.ylabel("CDF")
 
-        # middle left panel 
+        # middle left panel
         plt.subplot2grid((6, 4), (2, 2), rowspan=2, colspan=2)
         plt.plot(caf_c, 'go-')
         plt.plot(caf_i, 'ro-')
@@ -201,22 +201,22 @@ def rand_beta(lim=(0, 1), shape=3, num_trls=1):
     """Return random vector between limits weighted by beta function."""
     x = np.random.beta(shape, shape, num_trls)
     x = x * (lim[1] - lim[0]) + lim[0]
-    
+
     return x
-    
-    
+
+
 def calc_caf_values(dat, bounds=range(20, 100, 20)):
     """Calculate conditional accuracy functions"""
-    
+
     bins = np.digitize(dat[0, :], np.percentile(dat[0], bounds))
     caf = []
     for b in np.unique(bins):
         idx = np.where(bins == b)
         n_obs = len(idx[0])
         caf.append(1 - (sum(dat[1][idx])/n_obs))
-    
+
     return caf
-    
+
 
 def calc_delta_values(rt_c, rt_i, bounds=range(10, 100, 10)):
     """Calculate compatibility effect + delta values for correct trials."""
