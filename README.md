@@ -18,7 +18,10 @@ pip install -e dmc
 ## Basic Examples 
 ```python
 from dmc import dmc_sim
-
 dmc_sim.simulation()
-dmc_sim.simulation(tau=30)
 ```
+![alt text](/figures/figure1.png) 
+```python
+dmc_sim.simulation(tau=150)
+```
+![alt text](/figures/figure2.png) 
