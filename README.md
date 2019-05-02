@@ -11,8 +11,6 @@ procedures.
 ## Installation
 git clone https://github.com/igmmgi/DMCpython.git 
 
-cd DMCpython
-
 pip install -e dmc
 
 ## Basic Examples 
