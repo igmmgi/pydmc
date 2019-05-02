@@ -11,15 +11,16 @@ procedures.
 ## Installation
 git clone https://github.com/igmmgi/DMCpython.git 
 
-pip install -e dmc
+pip install -e DMCpython
 
 ## Basic Examples 
 ```python
-from dmc import dmc_sim
+from DMMCpython.dmc import dmc_sim
 dmc_sim.simulation()
 ```
 ![alt text](/figures/figure1.png) 
 ```python
+from DMMCpython.dmc import dmc_sim
 dmc_sim.simulation(tau=150)
 ```
 ![alt text](/figures/figure2.png) 

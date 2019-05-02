@@ -1,0 +1,14 @@
+cycler
+kiwisolver
+matplotlib
+numpy
+pandas
+patsy
+pkg-resources
+pyparsing
+python-dateutil
+pytz
+scipy
+seaborn
+six
+statsmodels
