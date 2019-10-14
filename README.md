@@ -15,12 +15,13 @@ pip install -e DMCpython
 
 ## Basic Examples 
 ```python
-from DMMCpython.dmc import dmc_sim
-dmc_sim.simulation()
+from dmc.dmc import DMC 
+dat = DMC()
 ```
 ![alt text](/figures/figure1.png) 
 ```python
+from dmc.dmc import DMC 
 from DMMCpython.dmc import dmc_sim
-dmc_sim.simulation(tau=150)
+dat = DMC(tau=150)
 ```
 ![alt text](/figures/figure2.png) 
