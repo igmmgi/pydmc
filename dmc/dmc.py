@@ -88,12 +88,12 @@ class DMC:
         Examples
         --------
         >>> from dmc.dmc import DMC 
-        >>> dat = DMC()               # Fig 3
-        >>> dat = DMC(tau = 150)      # Fig 4
-        >>> dat = DMC(tau = 90)       # Fig 5
-        >>> dat = DMC(var_sp = True)  # Fig 6
-        >>> dat = DMC(var_dr = True)  # Fig 7
-
+        >>> dat = DMC()                # Fig 3
+        >>> dat = DMC(full_data=False) # Fig 3 (part)
+        >>> dat = DMC(tau = 150)       # Fig 4
+        >>> dat = DMC(tau = 90)        # Fig 5
+        >>> dat = DMC(var_sp = True)   # Fig 6
+        >>> dat = DMC(var_dr = True)   # Fig 7
         """
 
         self.amp = amp
@@ -413,19 +413,18 @@ class DMC:
             return np.zeros(self.n_trls)
 
 
-@jit(nopython=True, parallel=True)
+@jit(nopython=True)
 def _run_simulation_numba(mu, sp, dr, t_max, sigma, res_mean, res_sd, bnds, n_trls):
 
     dat = np.vstack((np.ones(n_trls) * t_max, np.ones(n_trls)))
 
-    trl_xt = np.zeros(t_max)
     for trl in range(n_trls):
-        trl_xt[0] = sp[trl] + mu[0] + dr[trl] + (sigma * np.random.randn())
-        for t in range(1, t_max):
-            trl_xt[t] = trl_xt[t - 1] + mu[t] + dr[trl] + (sigma * np.random.randn())
-            if np.abs(trl_xt[t]) >= bnds:
+        trl_xt = sp[trl]
+        for t in range(0, t_max):
+            trl_xt += mu[t] + dr[trl] + (sigma * np.random.randn())
+            if np.abs(trl_xt) >= bnds:
                 dat[0][trl] = t + np.random.normal(res_mean, res_sd)
-                if trl_xt[t] > 0.0:
+                if trl_xt > 0.0:
                     dat[1][trl] = False
                 break
 
