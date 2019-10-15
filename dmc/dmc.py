@@ -1,12 +1,12 @@
 """
-DMC model simulation detailed in  Ulrich, R., Schröter, H., Leuthold, H.,
-    & Birngruber, T. (2015). Automatic and controlled stimulus processing
-    in conflict tasks: Superimposed diffusion processes and delta functions.
-    Cognitive Psychology, 78, 148-174.
+DMC model simulation detailed in  Ulrich, R., Schröter, H., Leuthold, H., 
+& Birngruber, T. (2015). Automatic and controlled stimulus processing
+in conflict tasks: Superimposed diffusion processes and delta functions.
+Cognitive Psychology, 78, 148-174.
 """
 import matplotlib.pyplot as plt
 import numpy as np
-from numba import jit
+from numba import jit, prange
 import pandas as pd
 from seaborn import distplot
 
@@ -413,12 +413,12 @@ class DMC:
             return np.zeros(self.n_trls)
 
 
-@jit(nopython=True)
+@jit(nopython=True, parallel=True)
 def _run_simulation_numba(mu, sp, dr, t_max, sigma, res_mean, res_sd, bnds, n_trls):
 
     dat = np.vstack((np.ones(n_trls) * t_max, np.ones(n_trls)))
 
-    for trl in range(n_trls):
+    for trl in prange(n_trls):
         trl_xt = sp[trl]
         for t in range(0, t_max):
             trl_xt += mu[t] + dr[trl] + (sigma * np.random.randn())
