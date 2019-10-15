@@ -21,7 +21,6 @@ dat = DMC()
 ![alt text](/figures/figure1.png) 
 ```python
 from dmc.dmc import DMC 
-from DMMCpython.dmc import dmc_sim
 dat = DMC(tau=150)
 ```
 ![alt text](/figures/figure2.png) 
