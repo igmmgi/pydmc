@@ -1,19 +1,21 @@
 from setuptools import setup
 
+VERSION = "0.1.0"
+DESCRIPTION = "Diffusion Model of Conflict (DMC)"
+
 setup(
-    name="dmc",
-    version="0.0.2",
-    description="Diffusion Model of Conflict (DMC)",
+    name="pydmc",
+    version=VERSION,
+    description=DESCRIPTION,
     author="IGM",
-    packages=["dmc"],
-    license="MIT",
+    author_email="ian.mackenzie@uni-tuebingen.de",
     install_requires=[
-        "matplotlib",
         "numpy",
+        "matplotlib",
+        "numba",
+        "fastKDE",
         "pandas",
-        "seaborn",
-        "statsmodels",
         "scipy",
     ],
-    zip_safe=False,
+    license="MIT",
 )

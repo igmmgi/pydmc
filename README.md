@@ -1,4 +1,4 @@
-# DMC 
+# pydmc 
 Python implementation of the diffusion process model (Diffusion Model
 for Conflict Tasks, DMC) presented in Automatic and controlled stimulus
 processing in conflict tasks: Superimposed diffusion processes and delta
@@ -9,18 +9,20 @@ NB. See also R/Cpp package DMCfun for further functionality including fitting
 procedures.
 
 ## Installation
-git clone https://github.com/igmmgi/DMCpython.git 
+git clone https://github.com/igmmgi/pydmc.git 
 
-pip install -e DMCpython
+pip install -e pydmc
 
 ## Basic Examples 
 ```python
-from dmc.dmc import DMC 
-dat = DMC()
+from pydmc.dmc import DmcSim 
+dat = DmcSim(full_data=True)
+dat.plot()
 ```
 ![alt text](/figures/figure1.png) 
 ```python
-from dmc.dmc import DMC 
-dat = DMC(tau=150)
+from pydmc.dmc import DmcSim 
+dat = DmcSim(full_data=True, tau=150)
+dat.plot()
 ```
 ![alt text](/figures/figure2.png) 
