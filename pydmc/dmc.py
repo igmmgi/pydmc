@@ -86,7 +86,7 @@ class DmcSim:
 
         Returns
         -------
-        - DmcSim object 
+        - DmcSim object
 
         Notes
         -----
@@ -95,18 +95,18 @@ class DmcSim:
         Examples
         --------
         >>> from pydmc.dmc import DmcSim
-        >>> dmc = DmcSim(full_data=True)             
+        >>> dmc = DmcSim(full_data=True)
         >>> dmc.plot()                 # Fig 3
-        >>> dat = DmcSim()             
+        >>> dat = DmcSim()
         >>> dmc.plot()                 # Fig 3 (part)
-        >>> dat = DmcSim(tau = 150)       
-        >>> dmc.plot()                 # Fig 4 
-        >>> dat = DmcSim(tau = 90)     
-        >>> dmc.plot()                 # Fig 5 
-        >>> dat = DmcSim(var_sp = True)   
-        >>> dmc.plot()                 # Fig 6 
-        >>> dat = DmcSim(var_dr = True)   
-        >>> dmc.plot()                 # Fig 7 
+        >>> dat = DmcSim(tau = 150)
+        >>> dmc.plot()                 # Fig 4
+        >>> dat = DmcSim(tau = 90)
+        >>> dmc.plot()                 # Fig 5
+        >>> dat = DmcSim(var_sp = True)
+        >>> dmc.plot()                 # Fig 6
+        >>> dat = DmcSim(var_dr = True)
+        >>> dmc.plot()                 # Fig 7
         """
 
         self.amp = amp
@@ -127,7 +127,7 @@ class DmcSim:
         self.n_caf = n_caf
         self.n_delta = n_delta
         self.full_data = full_data
-        self.n_trls_data = 5
+        self.n_trls_data = n_trls_data
 
         self.tim = np.arange(1, self.t_max + 1, 1)
         self.eq4 = (
@@ -222,38 +222,33 @@ class DmcSim:
         self._calc_delta_values()
         self._results_summary()
 
-
     def _results_summary(self):
-         """Create results summary table."""
+        """Create results summary table."""
 
         res = [
             [
-                 round(np.mean(self.dat[0][0][self.dat[0][1] == 0])),
-                 round(np.std(self.dat[0][0][self.dat[0][1] == 0])),
-                 round(np.sum(self.dat[0][1] / self.n_trls) * 100, 1),
-                 round(np.mean(self.dat[0][0][self.dat[0][1] == 1])),
-                 round(np.std(self.dat[0][0][self.dat[0][1] == 1])),
+                round(np.mean(self.dat[0][0][self.dat[0][1] == 0])),
+                round(np.std(self.dat[0][0][self.dat[0][1] == 0])),
+                round(np.sum(self.dat[0][1] / self.n_trls) * 100, 1),
+                round(np.mean(self.dat[0][0][self.dat[0][1] == 1])),
+                round(np.std(self.dat[0][0][self.dat[0][1] == 1])),
             ],
             [
-                 round(np.mean(self.dat[1][0][self.dat[1][1] == 0])),
-                 round(np.std(self.dat[1][0][self.dat[1][1] == 0])),
-                 round(np.sum(self.dat[1][1] / self.n_trls) * 100, 1),
-                 round(np.mean(self.dat[1][0][self.dat[1][1] == 1])),
-                 round(np.std(self.dat[1][0][self.dat[1][1] == 1])),
+                round(np.mean(self.dat[1][0][self.dat[1][1] == 0])),
+                round(np.std(self.dat[1][0][self.dat[1][1] == 0])),
+                round(np.sum(self.dat[1][1] / self.n_trls) * 100, 1),
+                round(np.mean(self.dat[1][0][self.dat[1][1] == 1])),
+                round(np.std(self.dat[1][0][self.dat[1][1] == 1])),
             ],
         ]
 
         self.res = pd.DataFrame(
-             res,
-             index=["comp", "incomp"],
-             columns=["rtCorr", "sdCorr", "perErr", "rtErr", "sdRtErr"],
+            res,
+            index=["comp", "incomp"],
+            columns=["rtCorr", "sdCorr", "perErr", "rtErr", "sdRtErr"],
         )
 
         print(self.res)
-
-
-    
-
 
     def _calc_caf_values(self):
         """Calculate conditional accuracy functions."""
@@ -478,7 +473,7 @@ class DmcSim:
         plt.xlim(xlim)
         plt.ylim(ylim)
         plt.ylabel(ylabel)
-        plt.xlabel(ylabel)
+        plt.xlabel(xlabel)
 
         if show:
             plt.show(block=False)
@@ -555,5 +550,3 @@ def _run_simulation_numba(drc, sp, dr, t_max, sigma, res_mean, res_sd, bnds, n_t
 
 if __name__ == "__main__":
     dmc = DmcSim()
-
-
