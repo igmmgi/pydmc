@@ -137,9 +137,9 @@ class DmcSim:
             * (np.exp(1) * self.tim / (self.aa_shape - 1) / self.tau)
             ** (self.aa_shape - 1)
         )
-        self.dat = [None, None]
-        self.dat_trials = [None, None]
-        self.xt = [None, None]
+        self.dat = []
+        self.dat_trials = []
+        self.xt = []
 
         if run_simulation:
             self.run_simulation()
@@ -159,7 +159,7 @@ class DmcSim:
         """Run simulation using numpy."""
 
         rand_nums = None
-        for idx, comp in enumerate([1, -1]):
+        for comp in [1, -1]:
             if rand_nums is None:
                 rand_nums = np.random.randn(self.n_trls, self.t_max)
             else:
@@ -185,14 +185,15 @@ class DmcSim:
             rt = np.argmax(np.abs(xt) > self.bnds, axis=1) + 1
             rt[rt == 1] = self.t_max
 
-            self.dat[idx] = np.vstack(
+
+            self.dat.append(np.vstack(
                 (
                     rt + np.random.normal(self.res_mean, self.res_sd, self.n_trls),
                     xt[np.arange(len(xt)), rt - 1] < self.bnds,
                 )
-            )
-            self.dat_trials[idx] = xt[0 : self.n_trls_data]
-            self.xt[idx] = xt.mean(0)
+            ))
+            self.dat_trials.append(xt[0 : self.n_trls_data])
+            self.xt.append(xt.mean(0))
 
         self._calc_caf_values()
         self._calc_delta_values()
@@ -201,13 +202,13 @@ class DmcSim:
     def _run_simulation_numba(self):
         """Run simulation using numba."""
 
-        for idx, comp in enumerate([1, -1]):
+        for comp in [1, -1]:
 
             dr = self._dr()
             sp = self._sp()
             drc = comp * self.eq4 * ((self.aa_shape - 1) / self.tim - 1 / self.tau)
 
-            self.dat[idx] = _run_simulation_numba(
+            self.dat.append(_run_simulation_numba(
                 drc,
                 sp,
                 dr,
@@ -217,7 +218,7 @@ class DmcSim:
                 self.res_sd,
                 self.bnds,
                 self.n_trls,
-            )
+            ))
 
         self._calc_caf_values()
         self._calc_delta_values()
@@ -586,8 +587,8 @@ class DmcOb:
             self._error_coding()
             self._outlier()
 
-        self.subject = self.aggregate_trials(self.data)
-        self.agg = self.aggregate_subjects(self.subject)
+        self._aggregate_trials()
+        self._aggregate_subjects()
 
     @staticmethod
     def read_data_files(dat, sep="\t", skiprows=0):
@@ -626,8 +627,7 @@ class DmcOb:
             False,
         )
 
-    @staticmethod
-    def aggregate_trials(dat):
+    def _aggregate_trials(self):
         def aggfun(x):
             new_cols = {
                 "N": len(x["Subject"]),
@@ -650,10 +650,9 @@ class DmcOb:
 
             return dat_agg
 
-        return dat.groupby(["Subject", "Comp"]).apply(aggfun).reset_index()
+        self.subject = self.data.groupby(["Subject", "Comp"]).apply(aggfun).reset_index()
 
-    @staticmethod
-    def aggregate_subjects(dat):
+    def _aggregate_subjects(self):
         def aggfun(x):
             new_cols = {
                 "N": len(x["Subject"]),
@@ -687,7 +686,7 @@ class DmcOb:
             )
             return dat_agg
 
-        return dat.groupby(["Comp"]).apply(aggfun).reset_index()
+        self.agg = self.subject.groupby(["Comp"]).apply(aggfun).reset_index()
 
 
 if __name__ == "__main__":
