@@ -140,6 +140,9 @@ class DmcSim:
         self.dat = []
         self.dat_trials = []
         self.xt = []
+        self.summary = []
+        self.caf = []
+        self.delta = []
 
         if run_simulation:
             self.run_simulation()
@@ -185,13 +188,14 @@ class DmcSim:
             rt = np.argmax(np.abs(xt) > self.bnds, axis=1) + 1
             rt[rt == 1] = self.t_max
 
-
-            self.dat.append(np.vstack(
-                (
-                    rt + np.random.normal(self.res_mean, self.res_sd, self.n_trls),
-                    xt[np.arange(len(xt)), rt - 1] < self.bnds,
+            self.dat.append(
+                np.vstack(
+                    (
+                        rt + np.random.normal(self.res_mean, self.res_sd, self.n_trls),
+                        xt[np.arange(len(xt)), rt - 1] < self.bnds,
+                    )
                 )
-            ))
+            )
             self.dat_trials.append(xt[0 : self.n_trls_data])
             self.xt.append(xt.mean(0))
 
@@ -208,17 +212,19 @@ class DmcSim:
             sp = self._sp()
             drc = comp * self.eq4 * ((self.aa_shape - 1) / self.tim - 1 / self.tau)
 
-            self.dat.append(_run_simulation_numba(
-                drc,
-                sp,
-                dr,
-                self.t_max,
-                self.sigma,
-                self.res_mean,
-                self.res_sd,
-                self.bnds,
-                self.n_trls,
-            ))
+            self.dat.append(
+                _run_simulation_numba(
+                    drc,
+                    sp,
+                    dr,
+                    self.t_max,
+                    self.sigma,
+                    self.res_mean,
+                    self.res_sd,
+                    self.bnds,
+                    self.n_trls,
+                )
+            )
 
         self._calc_caf_values()
         self._calc_delta_values()
@@ -227,7 +233,7 @@ class DmcSim:
     def _results_summary(self):
         """Create results summary table."""
 
-        res = [
+        summary = [
             [
                 round(np.mean(self.dat[0][0][self.dat[0][1] == 0])),
                 round(np.std(self.dat[0][0][self.dat[0][1] == 0])),
@@ -244,13 +250,11 @@ class DmcSim:
             ],
         ]
 
-        self.res = pd.DataFrame(
-            res,
+        self.summary = pd.DataFrame(
+            summary,
             index=["comp", "incomp"],
             columns=["rtCorr", "sdCorr", "perErr", "rtErr", "sdRtErr"],
         )
-
-        print(self.res)
 
     def _calc_caf_values(self):
         """Calculate conditional accuracy functions."""
@@ -263,14 +267,17 @@ class DmcSim:
             self.dat[1][0],
             np.percentile(self.dat[1][0], np.linspace(0, 100, self.n_caf + 1)[:-1]),
         )
-        self.caf = np.zeros((2, len(np.unique(bc))))
+        caf = np.zeros((len(np.unique(bc)), 3))
+        caf[:, 0] = np.arange(1, self.n_caf + 1)
         for bidx, bedge in enumerate(np.unique(bc)):
 
             idx = np.where(bc == bedge)
-            self.caf[0][bidx] = 1 - (sum(self.dat[0][1][idx]) / len(idx[0]))
+            caf[bidx, 1] = 1 - (sum(self.dat[0][1][idx]) / len(idx[0]))
 
             idx = np.where(bi == bedge)
-            self.caf[1][bidx] = 1 - (sum(self.dat[1][1][idx]) / len(idx[0]))
+            caf[bidx, 2] = 1 - (sum(self.dat[1][1][idx]) / len(idx[0]))
+
+        self.caf = pd.DataFrame(caf, columns=["bin", "comp", "incomp"])
 
     def _calc_delta_values(self):
         """Calculate compatibility effect + delta values for correct trials."""
@@ -278,8 +285,9 @@ class DmcSim:
         bc = np.percentile(self.dat[0][0], np.linspace(0, 100, self.n_delta + 2)[1:-1])
         bi = np.percentile(self.dat[1][0], np.linspace(0, 100, self.n_delta + 2)[1:-1])
 
-        self.time_delta = (bc + bi) / 2
-        self.effect_delta = bi - bc
+        delta = np.array((np.arange(1, self.n_delta + 1), (bc + bi) / 2, bi - bc)).T
+
+        self.delta = pd.DataFrame(delta, columns=["bin", "mean", "effect"])
 
     @staticmethod
     def rand_beta(lim=(0, 1), shape=3, n_trls=1):
@@ -356,7 +364,7 @@ class DmcSim:
     ):
         """Plot activation."""
 
-        if self.xt[0] is None:
+        if not self.xt:
             print("Plotting activation function requires full_data=True")
             return
 
@@ -376,7 +384,6 @@ class DmcSim:
         plt.plot(xlim, [-self.bnds, -self.bnds], "k--")
         plt.xlim(xlim)
         plt.ylim(ylim)
-        plt.yticks((-self.bnds, self.bnds))
         plt.xlabel(xlabel)
         plt.ylabel(ylabel)
 
@@ -394,7 +401,7 @@ class DmcSim:
     ):
         """Plot individual trials."""
 
-        if self.xt[0] is None:
+        if not self.xt:
             print("Plotting individual trials function requires full_data=True")
             return
 
@@ -414,7 +421,6 @@ class DmcSim:
         plt.plot(xlim, [-self.bnds, -self.bnds], "k--")
         plt.xlim(xlim)
         plt.ylim(ylim)
-        plt.yticks((-self.bnds, self.bnds))
         plt.xlabel(xlabel)
         plt.ylabel(ylabel)
 
@@ -489,8 +495,8 @@ class DmcSim:
         cols=("green", "red"),
     ):
         """Plot CAF."""
-        plt.plot(self.caf[0], cols[0], linestyle="-", marker="o")
-        plt.plot(self.caf[1], cols[1], linestyle="-", marker="o")
+        plt.plot(self.caf["comp"], cols[0], linestyle="-", marker="o")
+        plt.plot(self.caf["incomp"], cols[1], linestyle="-", marker="o")
 
         plt.ylim(ylim)
         plt.xticks(range(0, self.n_caf), [str(x) for x in range(1, self.n_caf + 1)])
@@ -505,7 +511,7 @@ class DmcSim:
     ):
         """Plot reaction-time delta plots."""
 
-        plt.plot(self.time_delta, self.effect_delta, "ko-", markersize=4)
+        plt.plot(self.delta["mean"], self.delta["effect"], "ko-", markersize=4)
 
         if xlim is None:
             xlim = [0, self.t_max]
@@ -650,7 +656,9 @@ class DmcOb:
 
             return dat_agg
 
-        self.subject = self.data.groupby(["Subject", "Comp"]).apply(aggfun).reset_index()
+        self.subject = (
+            self.data.groupby(["Subject", "Comp"]).apply(aggfun).reset_index()
+        )
 
     def _aggregate_subjects(self):
         def aggfun(x):
