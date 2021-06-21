@@ -7,6 +7,7 @@ Cognitive Psychology, 78, 148-174.
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import glob
 from numba import jit, prange
 from fastkde import fastKDE
 
@@ -546,6 +547,147 @@ def _run_simulation_numba(drc, sp, dr, t_max, sigma, res_mean, res_sd, bnds, n_t
                 break
 
     return dat
+
+
+class DmcOb:
+    def __init__(
+        self,
+        dat,
+        n_CAF=5,
+        n_delta=19,
+        outlier=[200, 1200],
+        columns=["Subject", "Comp", "RT", "Error"],
+        comp_coding=["comp", "incom"],
+        error_coding=[0, 1],
+        sep="\t",
+        skiprows=0,
+    ):
+        """
+        Parameters
+        ----------
+        """
+        self.n_CAF = n_CAF
+        self.n_delta = n_delta
+        self.outlier = outlier
+        self.columns = columns
+        self.comp_coding = comp_coding
+        self.error_coding = error_coding
+
+        if not isinstance(dat, pd.DataFrame):
+            self.data = self.read_data_files(dat, sep=sep, skiprows=skiprows)
+            self._columns()
+            self._comp_coding()
+            self._error_coding()
+            self._outlier()
+        else:
+            self.data = dat
+            self._columns()
+            self._comp_coding()
+            self._error_coding()
+            self._outlier()
+
+        self.subject = self.aggregate_trials(self.data)
+        self.agg = self.aggregate_subjects(self.subject)
+
+    @staticmethod
+    def read_data_files(dat, sep="\t", skiprows=0):
+        fn = glob.glob(dat)
+        dats = []
+        for f in fn:
+            dats.append(pd.read_csv(f, sep=sep, skiprows=skiprows))
+        return pd.concat(dats, axis=0, ignore_index=True)
+
+    def _columns(self):
+        try:
+            self.data = self.data[self.columns]
+        except:
+            raise Exception("requested columns not in data!")
+        if len(self.data.columns) != 4:
+            raise Exception("data does not contain required/requested coluumns!")
+        if not any(self.data.columns.values == self.columns):
+            self.data.columns = self.columns
+
+    def _comp_coding(self):
+        if self.comp_coding != ["comp", "incomp"]:
+            self.data["Comp"] = np.where(
+                self.data["Comp"] == self.comp_coding[0], "comp", "incomp"
+            )
+
+    def _error_coding(self):
+        if self.error_coding != [0, 1]:
+            self.data["Error"] = np.where(
+                self.data["Error"] == self.error_coding[0], 0, 1
+            )
+
+    def _outlier(self):
+        self.data["outlier"] = np.where(
+            (self.data["RT"] <= self.outlier[0]) | (self.data["RT"] >= self.outlier[1]),
+            True,
+            False,
+        )
+
+    @staticmethod
+    def aggregate_trials(dat):
+        def aggfun(x):
+            new_cols = {
+                "N": len(x["Subject"]),
+                "nCor": np.sum(x["Error"] == False),
+                "nErr": np.sum(x["Error"] == True),
+                "nOut": np.sum(x["outlier"] == True),
+                "rtCor": np.mean(
+                    x["RT"][(x["Error"] == False) & (x["outlier"] == False)]
+                ),
+                "rtErr": np.mean(
+                    x["RT"][(x["Error"] == True) & (x["outlier"] == False)]
+                ),
+            }
+            dat_agg = pd.Series(
+                new_cols, index=["N", "nCor", "nErr", "nOut", "rtCor", "rtErr"]
+            )
+            dat_agg["perErr"] = (
+                dat_agg["nErr"] / (dat_agg["nErr"] + dat_agg["nCor"]) * 100
+            )
+
+            return dat_agg
+
+        return dat.groupby(["Subject", "Comp"]).apply(aggfun).reset_index()
+
+    @staticmethod
+    def aggregate_subjects(dat):
+        def aggfun(x):
+            new_cols = {
+                "N": len(x["Subject"]),
+                "rtCor": np.nanmean(x["rtCor"]),
+                "sdRtCor": np.nanstd(x["rtCor"], ddof=1),
+                "seRtCor": np.nanstd(x["rtCor"], ddof=1)
+                / np.sqrt(x["Subject"].count()),
+                "rtErr": np.nanmean(x["rtErr"]),
+                "sdRtErr": np.nanstd(x["rtErr"], ddof=1),
+                "seRtErr": np.nanstd(x["rtErr"], ddof=1)
+                / np.sqrt(x["Subject"].count()),
+                "perErr": np.mean(x["perErr"]),
+                "sdPerErr": np.nanstd(x["perErr"], ddof=1),
+                "sePerErr": np.nanstd(x["perErr"], ddof=1)
+                / np.sqrt(x["Subject"].count()),
+            }
+            dat_agg = pd.Series(
+                new_cols,
+                index=[
+                    "N",
+                    "rtCor",
+                    "sdRtCor",
+                    "seRtCor",
+                    "rtErr",
+                    "sdRtErr",
+                    "seRtErr",
+                    "perErr",
+                    "sdPerErr",
+                    "sePerErr",
+                ],
+            )
+            return dat_agg
+
+        return dat.groupby(["Comp"]).apply(aggfun).reset_index()
 
 
 if __name__ == "__main__":
