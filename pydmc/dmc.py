@@ -256,28 +256,27 @@ class DmcSim:
             columns=["rtCorr", "sdCorr", "perErr", "rtErr", "sdRtErr"],
         )
 
+
     def _calc_caf_values(self):
         """Calculate conditional accuracy functions."""
+        def caffun(x, n):
+            # bin data
+            bin = np.digitize(
+                self.dat[0][0],
+                np.percentile(self.dat[0][0], np.linspace(0, 100, self.n_caf + 1)[:-1]),
+            )
+            x = x.assign(bin=bin)
 
-        bc = np.digitize(
-            self.dat[0][0],
-            np.percentile(self.dat[0][0], np.linspace(0, 100, self.n_caf + 1)[:-1]),
+            return pd.DataFrame((1 - x.groupby(["bin"])["Error"].mean())[:-1])
+
+        # create temp pandas dataframe
+        dfc = pd.DataFrame(self.dat[0].T, columns=["RT", "Error"]).assign(Comp = "comp")
+        dfi = pd.DataFrame(self.dat[1].T, columns=["RT", "Error"]).assign(Comp = "incomp")
+        df = pd.concat([dfc, dfi])
+
+        self.caf = (
+            df.groupby(["Comp"]).apply(caffun, self.n_caf).reset_index()
         )
-        bi = np.digitize(
-            self.dat[1][0],
-            np.percentile(self.dat[1][0], np.linspace(0, 100, self.n_caf + 1)[:-1]),
-        )
-        caf = np.zeros((len(np.unique(bc)), 3))
-        caf[:, 0] = np.arange(1, self.n_caf + 1)
-        for bidx, bedge in enumerate(np.unique(bc)):
-
-            idx = np.where(bc == bedge)
-            caf[bidx, 1] = 1 - (sum(self.dat[0][1][idx]) / len(idx[0]))
-
-            idx = np.where(bi == bedge)
-            caf[bidx, 2] = 1 - (sum(self.dat[1][1][idx]) / len(idx[0]))
-
-        self.caf = pd.DataFrame(caf, columns=["bin", "comp", "incomp"])
 
     def _calc_delta_values(self):
         """Calculate compatibility effect + delta values for correct trials."""
@@ -322,7 +321,7 @@ class DmcSim:
         plt.subplot2grid((6, 4), (0, 3), rowspan=2)
         self.plot_cdf(show=False)
 
-        # middle riight panel (CAF)
+        # middle right panel (CAF)
         plt.subplot2grid((6, 4), (2, 2), rowspan=2, colspan=2)
         self.plot_caf(show=False)
 
@@ -556,11 +555,13 @@ def _run_simulation_numba(drc, sp, dr, t_max, sigma, res_mean, res_sd, bnds, n_t
     return dat
 
 
+
+
 class DmcOb:
     def __init__(
         self,
         dat,
-        n_CAF=5,
+        n_caf=5,
         n_delta=19,
         outlier=[200, 1200],
         columns=["Subject", "Comp", "RT", "Error"],
@@ -573,7 +574,7 @@ class DmcOb:
         Parameters
         ----------
         """
-        self.n_CAF = n_CAF
+        self.n_caf = n_caf
         self.n_delta = n_delta
         self.outlier = outlier
         self.columns = columns
@@ -595,6 +596,7 @@ class DmcOb:
 
         self._aggregate_trials()
         self._aggregate_subjects()
+        self._calc_caf_values()
 
     @staticmethod
     def read_data_files(dat, sep="\t", skiprows=0):
@@ -656,7 +658,7 @@ class DmcOb:
 
             return dat_agg
 
-        self.subject = (
+        self.summary_subject = (
             self.data.groupby(["Subject", "Comp"]).apply(aggfun).reset_index()
         )
 
@@ -694,7 +696,28 @@ class DmcOb:
             )
             return dat_agg
 
-        self.agg = self.subject.groupby(["Comp"]).apply(aggfun).reset_index()
+        self.summary = (
+            self.summary_subject.groupby(["Comp"]).apply(aggfun).reset_index()
+        )
+
+    def _calc_caf_values(self):
+        """Calculate conditional accuracy functions."""
+
+        def caffun(x, n):
+            # remove outliers
+            x = x[x.outlier == False].reset_index()
+            # bin data
+            bin = np.digitize(
+                    x.loc[:, "RT"],
+                    np.percentile(x.loc[:, "RT"], np.linspace(0, 100, n + 1)),
+            )
+            x = x.assign(bin=bin)
+
+            return pd.DataFrame((1 - x.groupby(["bin"])["Error"].mean())[:-1])
+
+        self.caf_subject = (
+            self.data.groupby(["Subject", "Comp"]).apply(caffun, self.n_caf).reset_index()
+        )
 
 
 if __name__ == "__main__":

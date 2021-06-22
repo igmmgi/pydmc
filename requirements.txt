@@ -1,6 +1,5 @@
+numba
 numpy
+fastkde
 pandas
 matplotlib
-fastkde
-numba
-polars
