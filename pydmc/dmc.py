@@ -256,37 +256,44 @@ class DmcSim:
             columns=["rtCorr", "sdCorr", "perErr", "rtErr", "sdRtErr"],
         )
 
-
     def _calc_caf_values(self):
         """Calculate conditional accuracy functions."""
+
         def caffun(x, n):
             # bin data
             bin = np.digitize(
-                self.dat[0][0],
-                np.percentile(self.dat[0][0], np.linspace(0, 100, self.n_caf + 1)[:-1]),
+                x.loc[:, "RT"],
+                np.percentile(x.loc[:, "RT"], np.linspace(0, 100, self.n_caf + 1)),
             )
             x = x.assign(bin=bin)
 
             return pd.DataFrame((1 - x.groupby(["bin"])["Error"].mean())[:-1])
 
         # create temp pandas dataframe
-        dfc = pd.DataFrame(self.dat[0].T, columns=["RT", "Error"]).assign(Comp = "comp")
-        dfi = pd.DataFrame(self.dat[1].T, columns=["RT", "Error"]).assign(Comp = "incomp")
+        dfc = pd.DataFrame(self.dat[0].T, columns=["RT", "Error"]).assign(Comp="comp")
+        dfi = pd.DataFrame(self.dat[1].T, columns=["RT", "Error"]).assign(Comp="incomp")
         df = pd.concat([dfc, dfi])
 
-        self.caf = (
-            df.groupby(["Comp"]).apply(caffun, self.n_caf).reset_index()
-        )
+        self.caf = df.groupby(["Comp"]).apply(caffun, self.n_caf).reset_index()
 
     def _calc_delta_values(self):
         """Calculate compatibility effect + delta values for correct trials."""
 
-        bc = np.percentile(self.dat[0][0], np.linspace(0, 100, self.n_delta + 2)[1:-1])
-        bi = np.percentile(self.dat[1][0], np.linspace(0, 100, self.n_delta + 2)[1:-1])
+        nbin = np.arange(1, self.n_delta + 1)
+        mean_comp = np.percentile(
+            self.dat[0][0], np.linspace(0, 100, self.n_delta + 2)[1:-1]
+        )
+        mean_incomp = np.percentile(
+            self.dat[1][0], np.linspace(0, 100, self.n_delta + 2)[1:-1]
+        )
+        mean_bin = (mean_comp + mean_incomp) / 2
+        mean_effect = mean_incomp - mean_comp
 
-        delta = np.array((np.arange(1, self.n_delta + 1), (bc + bi) / 2, bi - bc)).T
+        dat = np.array([nbin, mean_comp, mean_incomp, mean_bin, mean_effect]).T
 
-        self.delta = pd.DataFrame(delta, columns=["bin", "mean", "effect"])
+        self.delta = pd.DataFrame(
+            dat, columns=["Bin", "mean_comp", "mean_incom", "mean_bin", "mean_effect"]
+        )
 
     @staticmethod
     def rand_beta(lim=(0, 1), shape=3, n_trls=1):
@@ -494,8 +501,18 @@ class DmcSim:
         cols=("green", "red"),
     ):
         """Plot CAF."""
-        plt.plot(self.caf["comp"], cols[0], linestyle="-", marker="o")
-        plt.plot(self.caf["incomp"], cols[1], linestyle="-", marker="o")
+        plt.plot(
+            self.caf["Error"][self.caf["Comp"] == "comp"],
+            cols[0],
+            linestyle="-",
+            marker="o",
+        )
+        plt.plot(
+            self.caf["Error"][self.caf["Comp"] == "incomp"].reset_index(),
+            cols[1],
+            linestyle="-",
+            marker="o",
+        )
 
         plt.ylim(ylim)
         plt.xticks(range(0, self.n_caf), [str(x) for x in range(1, self.n_caf + 1)])
@@ -510,7 +527,7 @@ class DmcSim:
     ):
         """Plot reaction-time delta plots."""
 
-        plt.plot(self.delta["mean"], self.delta["effect"], "ko-", markersize=4)
+        plt.plot(self.delta["mean_bin"], self.delta["mean_effect"], "ko-", markersize=4)
 
         if xlim is None:
             xlim = [0, self.t_max]
@@ -553,8 +570,6 @@ def _run_simulation_numba(drc, sp, dr, t_max, sigma, res_mean, res_sd, bnds, n_t
                 break
 
     return dat
-
-
 
 
 class DmcOb:
@@ -708,15 +723,17 @@ class DmcOb:
             x = x[x.outlier == False].reset_index()
             # bin data
             bin = np.digitize(
-                    x.loc[:, "RT"],
-                    np.percentile(x.loc[:, "RT"], np.linspace(0, 100, n + 1)),
+                x.loc[:, "RT"],
+                np.percentile(x.loc[:, "RT"], np.linspace(0, 100, n + 1)),
             )
             x = x.assign(bin=bin)
 
             return pd.DataFrame((1 - x.groupby(["bin"])["Error"].mean())[:-1])
 
         self.caf_subject = (
-            self.data.groupby(["Subject", "Comp"]).apply(caffun, self.n_caf).reset_index()
+            self.data.groupby(["Subject", "Comp"])
+            .apply(caffun, self.n_caf)
+            .reset_index()
         )
 
 
