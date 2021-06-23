@@ -736,6 +736,59 @@ class DmcOb:
             .reset_index()
         )
 
+    def plot(self):
+        """Plot"""
+
+        # upper left panel (rt correct)
+        plt.subplot2grid((3, 2), (0, 0), rowspan=3, colspan=2)
+        self.plot_rt_correct(show=False)
+
+        # # middle left pannel
+        # plt.subplot2grid((3, 2), (0, 1), rowspan=3, colspan=2)
+        # self.plot_er(show=False)
+
+        # # bottom left pannel
+        # plt.subplot2grid((3, 2), (0, 2), rowspan=3, colspan=2)
+        # self.plot_rt_error(show=False)
+
+        # # upper right panel (cdf)
+        # plt.subplot2grid((3, 2), (1, 0), rowspan=3, colspan=2)
+        # self.plot_cdf(show=False)
+
+        # # middle right (left) panel (PDF)
+        # plt.subplot2grid((3, 2), (1, 1), rowspan=3, colspan=2)
+        # self.plot_pdf(show=False)
+
+        # # lower right (right) panel (CDF)
+        # plt.subplot2grid((3, 2), (1, 2), rowspan=3, colspan=2)
+        # self.plot_cdf(show=False)
+
+        plt.show(block=False)
+
+    def plot_rt_correct(
+        self,
+        show=True,
+        xlim=None,
+        ylim=None,
+        xlabel=None,
+        cond_labels=["Compatible", "Incompatible"],
+        ylabel="RT Correct [ms]",
+    ):
+        """Plot correct RT's."""
+
+        plt.plot(cond_labels, self.summary["rtCor"], "ko-")
+
+        if ylim is None:
+            ylim = [np.min(self.summary["rtCor"])-100, np.max(self.summary["rtCor"])+100]
+
+        plt.ylim(ylim)
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
+        plt.margins(x=0.4)
+
+        if show:
+            plt.show(block=False)
+
 
 if __name__ == "__main__":
     dmc = DmcSim()
