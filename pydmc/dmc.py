@@ -262,11 +262,11 @@ class DmcSim:
 
         def caffun(x, n):
             # bin data
-            bin = np.digitize(
+            cafbin = np.digitize(
                 x.loc[:, "RT"],
-                np.percentile(x.loc[:, "RT"], np.linspace(0, 100, self.n_caf + 1)),
+                np.percentile(x.loc[:, "RT"], np.linspace(0, 100, n + 1)),
             )
-            x = x.assign(bin=bin)
+            x = x.assign(bin=cafbin)
 
             return pd.DataFrame((1 - x.groupby(["bin"])["Error"].mean())[:-1])
 
@@ -555,14 +555,12 @@ class DmcSim:
     def _dr(self):
         if self.var_dr:
             return self.rand_beta(self.dr_lim, self.dr_shape, self.n_trls)
-        else:
-            return np.ones(self.n_trls) * self.drc
+        return np.ones(self.n_trls) * self.drc
 
     def _sp(self):
         if self.var_sp:
             return self.rand_beta((-self.bnds, self.bnds), self.sp_shape, self.n_trls)
-        else:
-            return np.zeros(self.n_trls)
+        return np.zeros(self.n_trls)
 
 
 @jit(nopython=True, parallel=True)
@@ -730,11 +728,11 @@ class DmcOb:
             # remove outliers
             x = x[x.outlier == False].reset_index()
             # bin data
-            bin = np.digitize(
+            cafbin = np.digitize(
                 x.loc[:, "RT"],
                 np.percentile(x.loc[:, "RT"], np.linspace(0, 100, n + 1)),
             )
-            x = x.assign(bin=bin)
+            x = x.assign(bin=cafbin)
 
             return pd.DataFrame((1 - x.groupby(["bin"])["Error"].mean())[:-1])
 
@@ -806,7 +804,7 @@ class DmcOb:
         ).drop("level_1", axis=1)
 
     def plot(self):
-        """Plot"""
+        """Plot."""
 
         # upper left panel (rt correct)
         plt.subplot2grid((3, 2), (0, 0), rowspan=1, colspan=1)
@@ -837,7 +835,6 @@ class DmcOb:
     def plot_rt_correct(
         self,
         show=True,
-        xlim=None,
         ylim=None,
         xlabel=None,
         cond_labels=["Compatible", "Incompatible"],
@@ -864,7 +861,6 @@ class DmcOb:
     def plot_er(
         self,
         show=True,
-        xlim=None,
         ylim=None,
         xlabel=None,
         cond_labels=["Compatible", "Incompatible"],
@@ -888,7 +884,6 @@ class DmcOb:
     def plot_rt_error(
         self,
         show=True,
-        xlim=None,
         ylim=None,
         xlabel=None,
         cond_labels=["Compatible", "Incompatible"],
