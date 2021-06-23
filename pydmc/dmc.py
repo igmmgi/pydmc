@@ -10,6 +10,7 @@ import pandas as pd
 import glob
 from numba import jit, prange
 from fastkde import fastKDE
+from scipy.stats.mstats import mquantiles
 
 
 class DmcSim:
@@ -280,12 +281,21 @@ class DmcSim:
         """Calculate compatibility effect + delta values for correct trials."""
 
         nbin = np.arange(1, self.n_delta + 1)
-        mean_comp = np.percentile(
-            self.dat[0][0], np.linspace(0, 100, self.n_delta + 2)[1:-1]
+
+        mean_comp = mquantiles(
+            self.dat[0][0],
+            np.linspace(0, 1, self.n_delta + 2)[1:-1],
+            alphap=0.5,
+            betap=0.5,
         )
-        mean_incomp = np.percentile(
-            self.dat[1][0], np.linspace(0, 100, self.n_delta + 2)[1:-1]
+
+        mean_incomp = mquantiles(
+            self.dat[1][0],
+            np.linspace(0, 1, self.n_delta + 2)[1:-1],
+            alphap=0.5,
+            betap=0.5,
         )
+
         mean_bin = (mean_comp + mean_incomp) / 2
         mean_effect = mean_incomp - mean_comp
 
@@ -612,6 +622,7 @@ class DmcOb:
         self._aggregate_trials()
         self._aggregate_subjects()
         self._calc_caf_values()
+        self._calc_delta_values()
 
     @staticmethod
     def read_data_files(dat, sep="\t", skiprows=0):
@@ -652,20 +663,18 @@ class DmcOb:
 
     def _aggregate_trials(self):
         def aggfun(x):
-            new_cols = {
-                "N": len(x["Subject"]),
-                "nCor": np.sum(x["Error"] == False),
-                "nErr": np.sum(x["Error"] == True),
-                "nOut": np.sum(x["outlier"] == True),
-                "rtCor": np.mean(
-                    x["RT"][(x["Error"] == False) & (x["outlier"] == False)]
-                ),
-                "rtErr": np.mean(
-                    x["RT"][(x["Error"] == True) & (x["outlier"] == False)]
-                ),
-            }
-            dat_agg = pd.Series(
-                new_cols, index=["N", "nCor", "nErr", "nOut", "rtCor", "rtErr"]
+            new_cols = [
+                [
+                    len(x["Subject"]),
+                    np.sum(x["Error"] == False),
+                    np.sum(x["Error"] == True),
+                    np.sum(x["outlier"] == True),
+                    np.mean(x["RT"][(x["Error"] == False) & (x["outlier"] == False)]),
+                    np.mean(x["RT"][(x["Error"] == True) & (x["outlier"] == False)]),
+                ]
+            ]
+            dat_agg = pd.DataFrame(
+                new_cols, columns=["N", "nCor", "nErr", "nOut", "rtCor", "rtErr"]
             )
             dat_agg["perErr"] = (
                 dat_agg["nErr"] / (dat_agg["nErr"] + dat_agg["nCor"]) * 100
@@ -675,28 +684,27 @@ class DmcOb:
 
         self.summary_subject = (
             self.data.groupby(["Subject", "Comp"]).apply(aggfun).reset_index()
-        )
+        ).drop("level_2", axis=1)
 
     def _aggregate_subjects(self):
         def aggfun(x):
-            new_cols = {
-                "N": len(x["Subject"]),
-                "rtCor": np.nanmean(x["rtCor"]),
-                "sdRtCor": np.nanstd(x["rtCor"], ddof=1),
-                "seRtCor": np.nanstd(x["rtCor"], ddof=1)
-                / np.sqrt(x["Subject"].count()),
-                "rtErr": np.nanmean(x["rtErr"]),
-                "sdRtErr": np.nanstd(x["rtErr"], ddof=1),
-                "seRtErr": np.nanstd(x["rtErr"], ddof=1)
-                / np.sqrt(x["Subject"].count()),
-                "perErr": np.mean(x["perErr"]),
-                "sdPerErr": np.nanstd(x["perErr"], ddof=1),
-                "sePerErr": np.nanstd(x["perErr"], ddof=1)
-                / np.sqrt(x["Subject"].count()),
-            }
-            dat_agg = pd.Series(
+            new_cols = [
+                [
+                    len(x["Subject"]),
+                    np.nanmean(x["rtCor"]),
+                    np.nanstd(x["rtCor"], ddof=1),
+                    np.nanstd(x["rtCor"], ddof=1) / np.sqrt(x["Subject"].count()),
+                    np.nanmean(x["rtErr"]),
+                    np.nanstd(x["rtErr"], ddof=1),
+                    np.nanstd(x["rtErr"], ddof=1) / np.sqrt(x["Subject"].count()),
+                    np.mean(x["perErr"]),
+                    np.nanstd(x["perErr"], ddof=1),
+                    np.nanstd(x["perErr"], ddof=1) / np.sqrt(x["Subject"].count()),
+                ]
+            ]
+            dat_agg = pd.DataFrame(
                 new_cols,
-                index=[
+                columns=[
                     "N",
                     "rtCor",
                     "sdRtCor",
@@ -713,7 +721,7 @@ class DmcOb:
 
         self.summary = (
             self.summary_subject.groupby(["Comp"]).apply(aggfun).reset_index()
-        )
+        ).drop("level_1", axis=1)
 
     def _calc_caf_values(self):
         """Calculate conditional accuracy functions."""
@@ -736,32 +744,93 @@ class DmcOb:
             .reset_index()
         )
 
+        def aggfun(x):
+            return pd.DataFrame([np.nanmean(x["Error"])], columns=["Error"])
+
+        self.caf = (
+            self.caf_subject.groupby(["Comp", "bin"])
+            .apply(aggfun)
+            .reset_index()
+            .drop("level_2", axis=1)
+        )
+
+    def _calc_delta_values(self):
+        """Calculate compatibility effect + delta values for correct trials."""
+
+        def deltafun(x, n):
+            x = x[(x.outlier == False) & (x.Error == 0)].reset_index()
+
+            nbin = np.arange(1, n + 1)
+            mean_comp = mquantiles(
+                x["RT"][(x["Comp"] == "comp")],
+                np.linspace(0, 1, n + 2)[1:-1],
+                alphap=0.5,
+                betap=0.5,
+            )
+
+            mean_incomp = mquantiles(
+                x["RT"][(x["Comp"] == "incomp")],
+                np.linspace(0, 1, n + 2)[1:-1],
+                alphap=0.5,
+                betap=0.5,
+            )
+            mean_bin = (mean_comp + mean_incomp) / 2
+            mean_effect = mean_incomp - mean_comp
+
+            dat = np.array([nbin, mean_comp, mean_incomp, mean_bin, mean_effect]).T
+
+            return pd.DataFrame(
+                dat,
+                columns=["Bin", "mean_comp", "mean_incomp", "mean_bin", "mean_effect"],
+            )
+
+        self.delta_subject = (
+            self.data.groupby(["Subject"]).apply(deltafun, self.n_delta).reset_index()
+        ).drop("level_1", axis=1)
+
+        def aggfun(x):
+            return pd.DataFrame(
+                [
+                    [
+                        np.nanmean(x["mean_comp"]),
+                        np.nanmean(x["mean_incomp"]),
+                        np.nanmean(x["mean_bin"]),
+                        np.nanmean(x["mean_effect"]),
+                    ]
+                ],
+                columns=["mean_comp", "mean_incomp", "mean_bin", "mean_effect"],
+            )
+
+        self.delta = (
+            self.delta_subject.groupby(["Bin"]).apply(aggfun).reset_index()
+        ).drop("level_1", axis=1)
+
     def plot(self):
         """Plot"""
 
         # upper left panel (rt correct)
-        plt.subplot2grid((3, 2), (0, 0), rowspan=3, colspan=2)
+        plt.subplot2grid((3, 2), (0, 0), rowspan=1, colspan=1)
         self.plot_rt_correct(show=False)
 
-        # # middle left pannel
-        # plt.subplot2grid((3, 2), (0, 1), rowspan=3, colspan=2)
-        # self.plot_er(show=False)
+        # middle left pannel
+        plt.subplot2grid((3, 2), (1, 0), rowspan=1, colspan=1)
+        self.plot_er(show=False)
 
-        # # bottom left pannel
-        # plt.subplot2grid((3, 2), (0, 2), rowspan=3, colspan=2)
-        # self.plot_rt_error(show=False)
+        # bottom left pannel
+        plt.subplot2grid((3, 2), (2, 0), rowspan=1, colspan=1)
+        self.plot_rt_error(show=False)
 
-        # # upper right panel (cdf)
-        # plt.subplot2grid((3, 2), (1, 0), rowspan=3, colspan=2)
-        # self.plot_cdf(show=False)
+        # upper right panel (cdf)
+        plt.subplot2grid((3, 2), (0, 1), rowspan=1, colspan=1)
+        self.plot_cdf(show=False)
 
-        # # middle right (left) panel (PDF)
-        # plt.subplot2grid((3, 2), (1, 1), rowspan=3, colspan=2)
-        # self.plot_pdf(show=False)
+        # middle right (left) panel (PDF)
+        plt.subplot2grid((3, 2), (1, 1), rowspan=1, colspan=1)
+        self.plot_caf(show=False)
 
-        # # lower right (right) panel (CDF)
-        # plt.subplot2grid((3, 2), (1, 2), rowspan=3, colspan=2)
-        # self.plot_cdf(show=False)
+        # lower right (right) panel (CDF)
+        plt.subplot2grid((3, 2), (2, 1), rowspan=1, colspan=1)
+        self.plot_delta(show=False)
 
         plt.show(block=False)
 
@@ -779,12 +848,162 @@ class DmcOb:
         plt.plot(cond_labels, self.summary["rtCor"], "ko-")
 
         if ylim is None:
-            ylim = [np.min(self.summary["rtCor"])-100, np.max(self.summary["rtCor"])+100]
+            ylim = [
+                np.min(self.summary["rtCor"]) - 100,
+                np.max(self.summary["rtCor"]) + 100,
+            ]
 
         plt.ylim(ylim)
         plt.xlabel(xlabel)
         plt.ylabel(ylabel)
         plt.margins(x=0.4)
+
+        if show:
+            plt.show(block=False)
+
+    def plot_er(
+        self,
+        show=True,
+        xlim=None,
+        ylim=None,
+        xlabel=None,
+        cond_labels=["Compatible", "Incompatible"],
+        ylabel="Error Rate [%]",
+    ):
+        """Plot error rate"""
+
+        plt.plot(cond_labels, self.summary["perErr"], "ko-")
+
+        if ylim is None:
+            ylim = [0, np.max(self.summary["perErr"]) + 5]
+
+        plt.ylim(ylim)
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
+        plt.margins(x=0.4)
+
+        if show:
+            plt.show(block=False)
+
+    def plot_rt_error(
+        self,
+        show=True,
+        xlim=None,
+        ylim=None,
+        xlabel=None,
+        cond_labels=["Compatible", "Incompatible"],
+        ylabel="RT Error [ms]",
+    ):
+        """Plot error RT's."""
+
+        plt.plot(cond_labels, self.summary["rtErr"], "ko-")
+
+        if ylim is None:
+            ylim = [
+                np.min(self.summary["rtErr"]) - 100,
+                np.max(self.summary["rtErr"]) + 100,
+            ]
+
+        plt.ylim(ylim)
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
+        plt.margins(x=0.4)
+
+        if show:
+            plt.show(block=False)
+
+    def plot_cdf(
+        self,
+        show=True,
+        xlim=None,
+        ylim=[0, 1.05],
+        xlabel=None,
+        cond_labels=["Compatible", "Incompatible"],
+        ylabel="RT Error [ms]",
+        cols=("green", "red"),
+    ):
+        """Plot CDF"""
+        plt.plot(
+            self.delta["mean_comp"],
+            np.linspace(0, 1, self.n_delta + 2)[1:-1],
+            color=cols[0],
+            linestyle="-",
+            marker="o",
+        )
+        plt.plot(
+            self.delta["mean_incomp"],
+            np.linspace(0, 1, self.n_delta + 2)[1:-1],
+            color=cols[1],
+            linestyle="-",
+            marker="o",
+        )
+
+        if xlim is None:
+            xlim = [
+                np.min(self.delta.mean_bin) - 100,
+                np.max(self.delta.mean_bin) + 100,
+            ]
+
+        plt.xlim(xlim)
+        plt.ylim(ylim)
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
+
+        if show:
+            plt.show(block=False)
+
+    def plot_caf(
+        self,
+        show=True,
+        xlabel="RT Bin",
+        ylabel="CAF",
+        ylim=[0, 1.1],
+        cols=("green", "red"),
+    ):
+        """Plot CAF."""
+        plt.plot(
+            self.caf["Error"][self.caf["Comp"] == "comp"],
+            color=cols[0],
+            linestyle="-",
+            marker="o",
+        )
+        plt.plot(
+            self.caf["Error"][self.caf["Comp"] == "incomp"].reset_index(),
+            color=cols[1],
+            linestyle="-",
+            marker="o",
+        )
+
+        plt.ylim(ylim)
+        plt.xticks(range(0, self.n_caf), [str(x) for x in range(1, self.n_caf + 1)])
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
+
+        if show:
+            plt.show(block=False)
+
+    def plot_delta(
+        self, show=True, xlabel="Time (ms)", ylabel=r"$\Delta$", xlim=None, ylim=None
+    ):
+        """Plot reaction-time delta plots."""
+
+        plt.plot(self.delta["mean_bin"], self.delta["mean_effect"], "ko-", markersize=4)
+
+        if xlim is None:
+            xlim = [
+                np.min(self.delta.mean_bin) - 100,
+                np.max(self.delta.mean_bin) + 100,
+            ]
+        if ylim is None:
+            ylim = [
+                np.min(self.delta.mean_effect) - 25,
+                np.max(self.delta.mean_effect) + 25,
+            ]
+
+        plt.xlim(xlim)
+        plt.ylim(ylim)
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
 
         if show:
             plt.show(block=False)

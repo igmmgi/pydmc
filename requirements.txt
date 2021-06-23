@@ -1,5 +1,6 @@
-numba
 numpy
-fastkde
-pandas
 matplotlib
+fastkde
+scipy
+numba
+pandas
