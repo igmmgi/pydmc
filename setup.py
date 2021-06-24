@@ -17,5 +17,8 @@ setup(
         "pandas",
         "scipy",
     ],
+    packages=["pydmc"],
+    include_package_data=True,
+    package_data={'': ['data/*.csv']},
     license="MIT",
 )
