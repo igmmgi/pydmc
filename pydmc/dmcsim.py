@@ -197,8 +197,8 @@ class DmcSim:
             if self.res_dist == 1:
                 res_dist = np.random.normal(self.res_mean, self.res_sd, self.n_trls)
             elif self.res_dist == 2:
-                lowhigh =
-
+                r = np.max([0.01, np.sqrt((self.res_sd * self.res_sd / (1 / 12)))])
+                res_dist = np.random.uniform(self.res_mean - r, self.res_mean + r)
 
             self.dat.append(
                 np.vstack(
@@ -231,6 +231,7 @@ class DmcSim:
                     dr,
                     self.t_max,
                     self.sigma,
+                    self.res_dist,
                     self.res_mean,
                     self.res_sd,
                     self.bnds,
@@ -576,10 +577,16 @@ class DmcSim:
 
 
 @jit(nopython=True, parallel=True)
-def _run_simulation_numba(drc, sp, dr, t_max, sigma, res_mean, res_sd, bnds, n_trls):
+def _run_simulation_numba(
+    drc, sp, dr, t_max, sigma, res_dist_type, res_mean, res_sd, bnds, n_trls
+):
 
     dat = np.vstack((np.ones(n_trls) * t_max, np.zeros(n_trls)))
-    res_dist = np.random.normal(res_mean, res_sd, n_trls)
+    if res_dist_type == 1:
+        res_dist = np.random.normal(res_mean, res_sd, n_trls)
+    elif res_dist_type == 2:
+        width = max([0.01, np.sqrt((res_sd * res_sd / (1 / 12)))])
+        res_dist = np.random.uniform(res_mean - width, res_mean + width, n_trls)
 
     for trl in prange(n_trls):
         trl_xt = sp[trl]
