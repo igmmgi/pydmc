@@ -13,6 +13,8 @@ from scipy.stats.mstats import mquantiles
 
 
 class DmcSim:
+    """DMC Simulation."""
+
     def __init__(
         self,
         amp=20,
@@ -21,6 +23,7 @@ class DmcSim:
         drc=0.5,
         sigma=4,
         bnds=75,
+        res_dist=1,
         res_mean=300,
         res_sd=30,
         n_trls=100000,
@@ -52,6 +55,8 @@ class DmcSim:
             diffusion constant
         bnds: int, optional
             +- response barrier
+        res_dist: int, optional
+            non-decisional component distribution (1=normal, 2=uniform)
         res_mean: int/float, optional
             mean of non-decisional component
         res_sd: int/float, optional
@@ -116,6 +121,7 @@ class DmcSim:
         self.drc = drc
         self.sigma = sigma
         self.bnds = bnds
+        self.res_dist = res_dist
         self.res_mean = res_mean
         self.res_sd = res_sd
         self.n_trls = n_trls
@@ -188,10 +194,16 @@ class DmcSim:
             rt = np.argmax(np.abs(xt) > self.bnds, axis=1) + 1
             rt[rt == 1] = self.t_max
 
+            if self.res_dist == 1:
+                res_dist = np.random.normal(self.res_mean, self.res_sd, self.n_trls)
+            elif self.res_dist == 2:
+                lowhigh =
+
+
             self.dat.append(
                 np.vstack(
                     (
-                        rt + np.random.normal(self.res_mean, self.res_sd, self.n_trls),
+                        rt + res_dist,
                         xt[np.arange(len(xt)), rt - 1] < self.bnds,
                     )
                 )
@@ -260,7 +272,6 @@ class DmcSim:
         """Calculate conditional accuracy functions."""
 
         def caffun(x, n):
-            # bin data
             cafbin = np.digitize(
                 x.loc[:, "RT"],
                 np.percentile(x.loc[:, "RT"], np.linspace(0, 100, n + 1)),
@@ -281,6 +292,8 @@ class DmcSim:
 
         nbin = np.arange(1, self.n_delta + 1)
 
+        # alphap, betap values to match R quantile 5
+        # (see scipy.stats.mstats.mquantiles)
         mean_comp = mquantiles(
             self.dat[0][0],
             np.linspace(0, 1, self.n_delta + 2)[1:-1],
@@ -566,13 +579,14 @@ class DmcSim:
 def _run_simulation_numba(drc, sp, dr, t_max, sigma, res_mean, res_sd, bnds, n_trls):
 
     dat = np.vstack((np.ones(n_trls) * t_max, np.zeros(n_trls)))
+    res_dist = np.random.normal(res_mean, res_sd, n_trls)
 
     for trl in prange(n_trls):
         trl_xt = sp[trl]
         for tp in range(0, t_max):
             trl_xt += drc[tp] + dr[trl] + (sigma * np.random.randn())
             if np.abs(trl_xt) >= bnds:
-                dat[0, trl] = tp + np.random.normal(res_mean, res_sd)
+                dat[0, trl] = tp + max(0, res_dist[trl])
                 dat[1, trl] = trl_xt < 0.0
                 break
 
