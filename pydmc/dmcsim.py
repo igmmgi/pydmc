@@ -315,7 +315,7 @@ class DmcSim:
         dat = np.array([nbin, mean_comp, mean_incomp, mean_bin, mean_effect]).T
 
         self.delta = pd.DataFrame(
-            dat, columns=["Bin", "mean_comp", "mean_incom", "mean_bin", "mean_effect"]
+            dat, columns=["Bin", "mean_comp", "mean_incomp", "mean_bin", "mean_effect"]
         )
 
     @staticmethod
