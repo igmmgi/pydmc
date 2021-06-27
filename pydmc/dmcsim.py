@@ -326,14 +326,16 @@ class DmcSim:
 
         return x
 
-    def plot(self):
+    def plot(self, fig_type="summary1"):
         """Plot"""
-        if self.full_data:
-            self._plot_full()
-        else:
-            self._plot()
+        if fig_type == "summary1" and self.full_data:
+            self._plot_summary1()
+        elif fig_type == "summary2":
+            self._plot_summary2()
+        elif fig_type == "summary3":
+            self._plot_summary3()
 
-    def _plot_full(self):
+    def _plot_summary1(self):
 
         # upper left panel (activation)
         plt.subplot2grid((6, 4), (0, 0), rowspan=3, colspan=2)
@@ -362,7 +364,7 @@ class DmcSim:
         plt.subplots_adjust(hspace=1.5, wspace=0.35)
         plt.show(block=False)
 
-    def _plot(self):
+    def _plot_summary2(self):
 
         # upper right (left) panel (PDF)
         plt.subplot2grid((3, 2), (0, 0), rowspan=1)
@@ -382,6 +384,24 @@ class DmcSim:
 
         plt.subplots_adjust(hspace=1.5, wspace=0.35)
         plt.show(block=False)
+
+    def _plot_summary3(self):
+
+        # upper right (left) panel (PDF)
+        plt.subplot2grid((3, 1), (0, 0))
+        self.plot_rt_correct(show=False)
+
+        # upper right (eight) panel (CDF)
+        plt.subplot2grid((3, 1), (1, 0))
+        self.plot_er(show=False)
+
+        # middle left panel
+        plt.subplot2grid((3, 1), (2, 0))
+        self.plot_rt_error(show=False)
+
+        plt.subplots_adjust(hspace=0.5, wspace=0.35)
+        plt.show(block=False)
+
 
     def plot_activation(
         self,
@@ -426,7 +446,7 @@ class DmcSim:
         ylabel="X(t)",
         xlim=None,
         ylim=None,
-        cols=("green", "red"),
+        cols=("green", "grey"),
     ):
         """Plot individual trials."""
 
@@ -463,7 +483,7 @@ class DmcSim:
         ylim=None,
         xlabel="Time (ms)",
         ylabel="PDF",
-        cols=("green", "red"),
+        cols=("green", "grey"),
     ):
         """Plot PDF."""
 
@@ -494,7 +514,7 @@ class DmcSim:
         ylabel="CDF",
         xlim=None,
         ylim=[0, 1.0],
-        cols=("green", "red"),
+        cols=("green", "grey"),
     ):
         """Plot CDF."""
 
@@ -521,7 +541,7 @@ class DmcSim:
         xlabel="RT Bin",
         ylabel="CAF",
         ylim=[0, 1.1],
-        cols=("green", "red"),
+        cols=("green", "grey"),
     ):
         """Plot CAF."""
         plt.plot(
@@ -575,6 +595,85 @@ class DmcSim:
             return self.rand_beta((-self.bnds, self.bnds), self.sp_shape, self.n_trls)
         return np.zeros(self.n_trls)
 
+    def plot_rt_correct(
+        self,
+        show=True,
+        ylim=None,
+        xlabel=None,
+        cond_labels=["Compatible", "Incompatible"],
+        ylabel="RT Correct [ms]",
+        color="black"
+    ):
+        """Plot correct RT's."""
+
+        plt.plot(cond_labels, self.summary["rtCorr"], color=color, marker="o")
+
+        if ylim is None:
+            ylim = [
+                np.min(self.summary["rtCorr"]) - 100,
+                np.max(self.summary["rtCorr"]) + 100,
+            ]
+
+        plt.ylim(ylim)
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
+        plt.margins(x=0.4)
+
+        if show:
+            plt.show(block=False)
+
+    def plot_er(
+        self,
+        show=True,
+        ylim=None,
+        xlabel=None,
+        cond_labels=["Compatible", "Incompatible"],
+        ylabel="Error Rate [%]",
+        color="black"
+    ):
+        """Plot error rate"""
+
+        plt.plot(cond_labels, self.summary["perErr"], color=color, marker="o")
+
+        if ylim is None:
+            ylim = [0, np.max(self.summary["perErr"]) + 5]
+
+        plt.ylim(ylim)
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
+        plt.margins(x=0.4)
+
+        if show:
+            plt.show(block=False)
+
+    def plot_rt_error(
+        self,
+        show=True,
+        ylim=None,
+        xlabel=None,
+        cond_labels=["Compatible", "Incompatible"],
+        ylabel="RT Error [ms]",
+        color="black"
+    ):
+        """Plot error RT's."""
+
+        plt.plot(cond_labels, self.summary["rtErr"], color=color, marker="o")
+
+        if ylim is None:
+            ylim = [
+                np.min(self.summary["rtErr"]) - 100,
+                np.max(self.summary["rtErr"]) + 100,
+            ]
+
+        plt.ylim(ylim)
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
+        plt.margins(x=0.4)
+
+        if show:
+            plt.show(block=False)
+
+
 
 @jit(nopython=True, parallel=True)
 def _run_simulation_numba(
@@ -602,3 +701,4 @@ def _run_simulation_numba(
 
 if __name__ == "__main__":
     dmc = DmcSim()
+    dmc.plot(fig_type="summary3")

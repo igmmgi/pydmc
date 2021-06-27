@@ -277,10 +277,11 @@ class DmcOb:
         xlabel=None,
         cond_labels=["Compatible", "Incompatible"],
         ylabel="RT Correct [ms]",
+        color="black"
     ):
         """Plot correct RT's."""
 
-        plt.plot(cond_labels, self.summary["rtCor"], "ko-")
+        plt.plot(cond_labels, self.summary["rtCor"], color=color, marker="o")
 
         if ylim is None:
             ylim = [
@@ -303,10 +304,11 @@ class DmcOb:
         xlabel=None,
         cond_labels=["Compatible", "Incompatible"],
         ylabel="Error Rate [%]",
+        color="black"
     ):
         """Plot error rate"""
 
-        plt.plot(cond_labels, self.summary["perErr"], "ko-")
+        plt.plot(cond_labels, self.summary["perErr"], color=color, marker="o")
 
         if ylim is None:
             ylim = [0, np.max(self.summary["perErr"]) + 5]
@@ -326,10 +328,11 @@ class DmcOb:
         xlabel=None,
         cond_labels=["Compatible", "Incompatible"],
         ylabel="RT Error [ms]",
+        color="black"
     ):
         """Plot error RT's."""
 
-        plt.plot(cond_labels, self.summary["rtErr"], "ko-")
+        plt.plot(cond_labels, self.summary["rtErr"], color=color, marker="o")
 
         if ylim is None:
             ylim = [
@@ -353,7 +356,7 @@ class DmcOb:
         xlabel=None,
         cond_labels=["Compatible", "Incompatible"],
         ylabel="RT Error [ms]",
-        cols=("green", "red"),
+        cols=("green", "grey"),
     ):
         """Plot CDF"""
         plt.plot(
@@ -391,7 +394,7 @@ class DmcOb:
         xlabel="RT Bin",
         ylabel="CAF",
         ylim=[0, 1.1],
-        cols=("green", "red"),
+        cols=("green", "grey"),
     ):
         """Plot CAF."""
         plt.plot(

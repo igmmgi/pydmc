@@ -2,6 +2,7 @@ import numpy as np
 from scipy.optimize import fmin
 from pydmc.dmcob import DmcOb, flankerDataRaw, simonDataRaw
 from pydmc.dmcsim import DmcSim
+import matplotlib.pyplot as plt
 
 
 class DmcFit:
@@ -185,8 +186,83 @@ class DmcFit:
 
         return cost_value
 
+    def plot(self):
+        """Plot."""
+
+        # upper left panel (rt correct)
+        plt.subplot2grid((3, 1), (0, 0), rowspan=1, colspan=1)
+        self.plot_rt_correct(show=False)
+
+        # middle left pannel
+        plt.subplot2grid((3, 1), (1, 0), rowspan=1, colspan=1)
+        self.plot_er(show=False)
+
+        # bottom left pannel
+        plt.subplot2grid((3, 1), (2, 0), rowspan=1, colspan=1)
+        self.plot_rt_error(show=False)
+
+    def plot_rt_correct(
+        self,
+        show=True,
+        ylim=None,
+        xlabel=None,
+        cond_labels=["Compatible", "Incompatible"],
+        ylabel="RT Correct [ms]",
+        colors=["black", "grey"]
+    ):
+        """Plot correct RT's."""
+        if ylim is None:
+            ylim = [
+                min(
+                    min(self.res_th.summary["rtCorr"]),
+                    min(self.res_ob.summary["rtCor"]),
+                ),
+                max(
+                    max(self.res_th.summary["rtCorr"]),
+                    max(self.res_ob.summary["rtCor"]),
+                ),
+            ]
+        self.res_th.plot_rt_correct(ylim=ylim, color=colors[0])
+        self.res_ob.plot_rt_correct(ylim=ylim, color=colors[1])
+
+        if show:
+            plt.show(block=False)
+
+    def plot_er(
+        self,
+        show=True,
+        ylim=None,
+        xlabel=None,
+        cond_labels=["Compatible", "Incompatible"],
+        ylabel="RT Correct [ms]",
+        colors=["black", "grey"]
+    ):
+        """Plot correct RT's."""
+        self.res_ob.plot_er(color=colors[0])
+        self.res_th.plot_er(color=colors[1])
+
+        if show:
+            plt.show(block=False)
+
+    def plot_rt_error(
+        self,
+        show=True,
+        ylim=None,
+        xlabel=None,
+        cond_labels=["Compatible", "Incompatible"],
+        ylabel="RT Correct [ms]",
+        colors=["black", "grey"]
+    ):
+        """Plot correct RT's."""
+        self.res_ob.plot_rt_error(xlim=xlim, ylim=ylim, color=colors[0])
+        self.res_th.plot_rt_error(xlim=xlim, ylim=ylim, color=colors[1])
+
+        if show:
+            plt.show(block=False)
+
 
 if __name__ == "__main__":
     res_ob = DmcOb(flankerDataRaw())
     fit = DmcFit(res_ob)
-    fit.fit_data(maxiter=10)
+    fit.fit_data()
+    fit.plot()
