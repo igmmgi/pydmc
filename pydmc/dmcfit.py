@@ -1,6 +1,5 @@
 import numpy as np
 from scipy.optimize import fmin
-from pydmc.dmcob import DmcOb, flankerDataRaw, simonDataRaw
 from pydmc.dmcsim import DmcSim
 import matplotlib.pyplot as plt
 
@@ -23,10 +22,11 @@ class DmcFit:
         ----------
         """
         self.res_ob = res_ob
+        self.res_th = None
         self.n_trls = n_trls
         self.start_vals = start_vals
         self.min_vals = min_vals
-        self.max_vals = min_vals
+        self.max_vals = max_vals
         self.fixed_fit = fixed_fit
         self.n_delta = n_delta
         self.n_caf = n_caf
@@ -106,11 +106,11 @@ class DmcFit:
         self.fit = fmin(
             self._function_to_minimise,
             np.array(list(self.start_vals.values())),
-            (self.res_ob, self.n_trls, self.n_delta, self.n_caf),
+            (self.res_ob,),
             **kwargs,
         )
 
-    def _function_to_minimise(self, x, res_ob, n_trls, n_delta, n_caf):
+    def _function_to_minimise(self, x, res_ob):
 
         # bounds hack
         x = np.maximum(x, list(self.min_vals.values()))
@@ -127,9 +127,9 @@ class DmcFit:
             sp_shape=x[7],
             sigma=x[8],
             var_sp=True,
-            n_trls=n_trls,
-            n_delta=n_delta,
-            n_caf=n_caf,
+            n_trls=self.n_trls,
+            n_delta=self.n_delta,
+            n_caf=self.n_caf,
             res_dist=1,
         )
 
@@ -190,15 +190,15 @@ class DmcFit:
         """Plot."""
 
         # upper left panel (rt correct)
-        plt.subplot2grid((3, 1), (0, 0), rowspan=1, colspan=1)
+        plt.subplot2grid((3, 1), (0, 0))
         self.plot_rt_correct(show=False)
 
         # middle left pannel
-        plt.subplot2grid((3, 1), (1, 0), rowspan=1, colspan=1)
+        plt.subplot2grid((3, 1), (1, 0))
         self.plot_er(show=False)
 
         # bottom left pannel
-        plt.subplot2grid((3, 1), (2, 0), rowspan=1, colspan=1)
+        plt.subplot2grid((3, 1), (2, 0))
         self.plot_rt_error(show=False)
 
     def plot_rt_correct(
@@ -206,24 +206,45 @@ class DmcFit:
         show=True,
         ylim=None,
         xlabel=None,
-        cond_labels=["Compatible", "Incompatible"],
         ylabel="RT Correct [ms]",
-        colors=["black", "grey"]
+        label_fontsize=12,
+        tick_fontsize=10,
+        cond_labels=("Compatible", "Incompatible"),
+        colors=("black", "grey"),
+        **kwargs,
     ):
         """Plot correct RT's."""
         if ylim is None:
             ylim = [
                 min(
-                    min(self.res_th.summary["rtCorr"]),
-                    min(self.res_ob.summary["rtCor"]),
+                    min(self.res_th.summary["rt_cor"]),
+                    min(self.res_ob.summary["rt_cor"]),
                 ),
                 max(
-                    max(self.res_th.summary["rtCorr"]),
-                    max(self.res_ob.summary["rtCor"]),
+                    max(self.res_th.summary["rt_cor"]),
+                    max(self.res_ob.summary["rt_cor"]),
                 ),
             ]
-        self.res_th.plot_rt_correct(ylim=ylim, color=colors[0])
-        self.res_ob.plot_rt_correct(ylim=ylim, color=colors[1])
+        self.res_th.plot_rt_correct(
+            ylim=ylim,
+            xlabel=xlabel,
+            ylabel=ylabel,
+            label_fontsize=label_fontsize,
+            tick_fontsize=tick_fontsize,
+            cond_labels=cond_labels,
+            color=colors[0],
+            **kwargs,
+        )
+        self.res_ob.plot_rt_correct(
+            ylim=ylim,
+            xlabel=xlabel,
+            ylabel=ylabel,
+            label_fontsize=label_fontsize,
+            tick_fontsize=tick_fontsize,
+            cond_labels=cond_labels,
+            color=colors[1],
+            **kwargs,
+        )
 
         if show:
             plt.show(block=False)
@@ -233,13 +254,31 @@ class DmcFit:
         show=True,
         ylim=None,
         xlabel=None,
-        cond_labels=["Compatible", "Incompatible"],
         ylabel="RT Correct [ms]",
-        colors=["black", "grey"]
+        label_fontsize=12,
+        tick_fontsize=10,
+        cond_labels=("Compatible", "Incompatible"),
+        colors=("black", "grey"),
     ):
-        """Plot correct RT's."""
-        self.res_ob.plot_er(color=colors[0])
-        self.res_th.plot_er(color=colors[1])
+        """Plot error rate."""
+        self.res_ob.plot_er(
+            color=colors[0],
+            ylim=ylim,
+            xlabel=xlabel,
+            ylable=ylabel,
+            label_fontsize=label_fontsize,
+            tick_fontsize=tick_fontsize,
+            cond_labels=cond_labels,
+        )
+        self.res_th.plot_er(
+            color=colors[1],
+            ylim=ylim,
+            xlabel=xlabel,
+            ylable=ylabel,
+            label_fontsize=label_fontsize,
+            tick_fontsize=tick_fontsize,
+            cond_labels=cond_labels,
+        )
 
         if show:
             plt.show(block=False)
@@ -249,20 +288,135 @@ class DmcFit:
         show=True,
         ylim=None,
         xlabel=None,
-        cond_labels=["Compatible", "Incompatible"],
         ylabel="RT Correct [ms]",
-        colors=["black", "grey"]
+        label_fontsize=12,
+        tick_fontsize=10,
+        cond_labels=("Compatible", "Incompatible"),
+        colors=("black", "grey"),
     ):
-        """Plot correct RT's."""
-        self.res_ob.plot_rt_error(xlim=xlim, ylim=ylim, color=colors[0])
-        self.res_th.plot_rt_error(xlim=xlim, ylim=ylim, color=colors[1])
+        """Plot error RT's."""
+        self.res_ob.plot_rt_error(
+            ylim=ylim,
+            color=colors[0],
+            xlabel=xlabel,
+            ylable=ylabel,
+            label_fontsize=label_fontsize,
+            tick_fontsize=tick_fontsize,
+            cond_labels=cond_labels,
+        )
+        self.res_th.plot_rt_error(
+            ylim=ylim,
+            color=colors[1],
+            xlabel=xlabel,
+            ylable=ylabel,
+            label_fontsize=label_fontsize,
+            tick_fontsize=tick_fontsize,
+            cond_labels=cond_labels,
+        )
 
         if show:
             plt.show(block=False)
 
+    def plot_cdf(
+        self,
+        show=True,
+        ylim=(0, 1.05),
+        xlabel=None,
+        cond_labels=("Compatible", "Incompatible"),
+        ylabel="RT Error [ms]",
+        label_fontsize=12,
+        tick_fontsize=10,
+        colors=("green", "grey"),
+    ):
 
-if __name__ == "__main__":
-    res_ob = DmcOb(flankerDataRaw())
-    fit = DmcFit(res_ob)
-    fit.fit_data()
-    fit.plot()
+        self.res_ob.plot_cdf(
+            ylim=ylim,
+            color=colors[0],
+            xlabel=xlabel,
+            ylable=ylabel,
+            label_fontsize=label_fontsize,
+            tick_fontsize=tick_fontsize,
+            cond_labels=cond_labels,
+        )
+        self.res_th.plot_cdf(
+            ylim=ylim,
+            color=colors[1],
+            xlabel=xlabel,
+            ylable=ylabel,
+            label_fontsize=label_fontsize,
+            tick_fontsize=tick_fontsize,
+            cond_labels=cond_labels,
+        )
+
+        if show:
+            plt.show(block=False)
+
+    def plot_caf(
+        self,
+        show=True,
+        ylim=(0, 1.1),
+        xlabel="RT Bin",
+        ylabel="CAF",
+        label_fontsize=12,
+        tick_fontsize=10,
+        cond_labels=("Compatible", "Incompatible"),
+        colors=("green", "red"),
+        **kwargs,
+    ):
+
+        self.res_ob.plot_caf(
+            ylim=ylim,
+            color=colors[0],
+            xlabel=xlabel,
+            ylable=ylabel,
+            label_fontsize=label_fontsize,
+            tick_fontsize=tick_fontsize,
+            cond_labels=cond_labels,
+            **kwargs,
+        )
+        self.res_th.plot_caf(
+            ylim=ylim,
+            color=colors[1],
+            xlabel=xlabel,
+            ylable=ylabel,
+            label_fontsize=label_fontsize,
+            tick_fontsize=tick_fontsize,
+            cond_labels=cond_labels,
+            **kwargs,
+        )
+        if show:
+            plt.show(block=False)
+
+    def plot_delta(
+        self,
+        show=True,
+        xlim=None,
+        ylim=None,
+        xlabel="Time (ms)",
+        ylabel=r"$\Delta$",
+        label_fontsize=12,
+        tick_fontsize=10,
+        **kwargs,
+    ):
+        """Plot reaction-time delta plots."""
+
+        self.res_ob.plot_delta(
+            ylim=ylim,
+            xlim=xlim,
+            xlabel=xlabel,
+            ylable=ylabel,
+            label_fontsize=label_fontsize,
+            tick_fontsize=tick_fontsize,
+            **kwargs,
+        )
+        self.res_th.plot_delta(
+            ylim=ylim,
+            xlim=xlim,
+            xlabel=xlabel,
+            ylable=ylabel,
+            label_fontsize=label_fontsize,
+            tick_fontsize=tick_fontsize,
+            **kwargs,
+        )
+        if show:
+            plt.show(block=False)
