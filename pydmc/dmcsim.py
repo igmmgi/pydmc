@@ -498,8 +498,6 @@ class DmcSim:
             print("Plotting activation function requires full_data=True")
             return
 
-        kwargs = _plot_default_kwargs(kwargs, colors=True, marker=False)
-
         plt.plot(self.eq4, "k-")
         plt.plot(self.eq4 * -1, "k--")
         plt.plot(self.xt[0], color=colors[0], label=cond_labels[0], **kwargs)
@@ -514,18 +512,15 @@ class DmcSim:
 
         plt.plot(xlim, [self.bnds, self.bnds], "k--")
         plt.plot(xlim, [-self.bnds, -self.bnds], "k--")
-        plt.xlim(xlim)
-        plt.ylim(ylim)
-        plt.xlabel(xlabel, fontsize=label_fontsize)
-        plt.xticks(fontsize=tick_fontsize)
-        plt.ylabel(ylabel, fontsize=label_fontsize)
-        plt.yticks(fontsize=tick_fontsize)
+
+        self._adjust_plt(xlim, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
 
         if legend_position is not None:
             plt.legend(loc=legend_position)
 
         if show:
             plt.show(block=False)
+
 
     def plot_trials(
         self,
@@ -542,8 +537,6 @@ class DmcSim:
         **kwargs
     ):
         """Plot individual trials."""
-
-        kwargs = _plot_default_kwargs(kwargs, colors=True)
 
         if not self.xt:
             print("Plotting individual trials function requires full_data=True")
@@ -577,12 +570,8 @@ class DmcSim:
 
         plt.plot(xlim, [self.bnds, self.bnds], "k--")
         plt.plot(xlim, [-self.bnds, -self.bnds], "k--")
-        plt.xlim(xlim)
-        plt.ylim(ylim)
-        plt.xlabel(xlabel, fontsize=label_fontsize)
-        plt.xticks(fontsize=tick_fontsize)
-        plt.ylabel(ylabel, fontsize=label_fontsize)
-        plt.yticks(fontsize=tick_fontsize)
+
+        self._adjust_plt(xlim, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
 
         if legend_position is not None:
             plt.legend(loc=legend_position)
@@ -606,8 +595,6 @@ class DmcSim:
     ):
         """Plot PDF."""
 
-        kwargs = _plot_default_kwargs(kwargs, colors=True)
-
         comp_pdf, axes1 = fastKDE.pdf(self.dat[0][0])
         incomp_pdf, axes2 = fastKDE.pdf(self.dat[1][0])
 
@@ -620,12 +607,7 @@ class DmcSim:
         if ylim is None:
             ylim = [0, 0.01]
 
-        plt.xlim(xlim)
-        plt.ylim(ylim)
-        plt.xlabel(xlabel, fontsize=label_fontsize)
-        plt.xticks(fontsize=tick_fontsize)
-        plt.ylabel(ylabel, fontsize=label_fontsize)
-        plt.yticks(fontsize=tick_fontsize)
+        self._adjust_plt(xlim, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
 
         if legend_position is not None:
             plt.legend(loc=legend_position)
@@ -649,8 +631,6 @@ class DmcSim:
     ):
         """Plot CDF."""
 
-        kwargs = _plot_default_kwargs(kwargs, colors=True)
-
         comp_pdf, axes1 = fastKDE.pdf(self.dat[0][0])
         incomp_pdf, axes2 = fastKDE.pdf(self.dat[1][0])
 
@@ -672,12 +652,7 @@ class DmcSim:
         if xlim is None:
             xlim = [0, self.t_max]
 
-        plt.xlim(xlim)
-        plt.ylim(ylim)
-        plt.xlabel(xlabel, fontsize=label_fontsize)
-        plt.xticks(fontsize=tick_fontsize)
-        plt.ylabel(ylabel, fontsize=label_fontsize)
-        plt.yticks(fontsize=tick_fontsize)
+        self._adjust_plt(xlim, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
 
         if legend_position is not None:
             plt.legend(loc=legend_position)
@@ -700,7 +675,8 @@ class DmcSim:
     ):
         """Plot CAF."""
 
-        kwargs = _plot_default_kwargs(kwargs, colors=True, marker=True)
+        kwargs.setdefault("marker", "o")
+        kwargs.setdefault("markersize", 4)
 
         plt.plot(
             self.caf["bin"][self.caf["Comp"] == "comp"],
@@ -718,12 +694,9 @@ class DmcSim:
             **kwargs,
         )
 
-        plt.ylim(ylim)
         plt.xticks(range(1, self.n_caf + 1), [str(x) for x in range(1, self.n_caf + 1)])
-        plt.xlabel(xlabel, fontsize=label_fontsize)
-        plt.xticks(fontsize=tick_fontsize)
-        plt.ylabel(ylabel, fontsize=label_fontsize)
-        plt.yticks(fontsize=tick_fontsize)
+
+        self._adjust_plt(None, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
 
         if legend_position is not None:
             plt.legend(loc=legend_position)
@@ -744,7 +717,9 @@ class DmcSim:
     ):
         """Plot reaction-time delta plots."""
 
-        kwargs = _plot_default_kwargs(kwargs, marker=True)
+        kwargs.setdefault("color", "black")
+        kwargs.setdefault("marker", "o")
+        kwargs.setdefault("markersize", 4)
 
         plt.plot(self.delta["mean_bin"], self.delta["mean_effect"], **kwargs)
 
@@ -753,12 +728,7 @@ class DmcSim:
         if ylim is None:
             ylim = [-50, 100]
 
-        plt.xlim(xlim)
-        plt.ylim(ylim)
-        plt.xlabel(xlabel, fontsize=label_fontsize)
-        plt.xticks(fontsize=tick_fontsize)
-        plt.ylabel(ylabel, fontsize=label_fontsize)
-        plt.yticks(fontsize=tick_fontsize)
+        self._adjust_plt(xlim, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
 
         if show:
             plt.show(block=False)
@@ -786,7 +756,8 @@ class DmcSim:
     ):
         """Plot correct RT's."""
 
-        kwargs = _plot_default_kwargs(kwargs, marker=True)
+        kwargs.setdefault("marker", "o")
+        kwargs.setdefault("markersize", 4)
 
         plt.plot(cond_labels, self.summary["rt_cor"], **kwargs)
 
@@ -796,12 +767,9 @@ class DmcSim:
                 np.max(self.summary["rt_cor"]) + 100,
             ]
 
-        plt.ylim(ylim)
-        plt.xlabel(xlabel, fontsize=label_fontsize)
-        plt.xticks(fontsize=tick_fontsize)
-        plt.ylabel(ylabel, fontsize=label_fontsize)
-        plt.yticks(fontsize=tick_fontsize)
         plt.margins(x=0.5)
+
+        self._adjust_plt(None, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
 
         if show:
             plt.show(block=False)
@@ -819,19 +787,16 @@ class DmcSim:
     ):
         """Plot error rate"""
 
-        kwargs = _plot_default_kwargs(kwargs, marker=True)
+        kwargs.setdefault("marker", "o")
+        kwargs.setdefault("markersize", 4)
 
         plt.plot(cond_labels, self.summary["per_err"], **kwargs)
 
         if ylim is None:
             ylim = [0, np.max(self.summary["per_err"]) + 5]
 
-        plt.ylim(ylim)
-        plt.xlabel(xlabel, fontsize=label_fontsize)
-        plt.xticks(fontsize=tick_fontsize)
-        plt.ylabel(ylabel, fontsize=label_fontsize)
-        plt.yticks(fontsize=tick_fontsize)
         plt.margins(x=0.5)
+        self._adjust_plt(None, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
 
         if show:
             plt.show(block=False)
@@ -849,7 +814,8 @@ class DmcSim:
     ):
         """Plot error RT's."""
 
-        kwargs = _plot_default_kwargs(kwargs, marker=True)
+        kwargs.setdefault("marker", "o")
+        kwargs.setdefault("markersize", 4)
 
         plt.plot(cond_labels, self.summary["rt_err"], **kwargs)
 
@@ -859,27 +825,20 @@ class DmcSim:
                 np.max(self.summary["rt_err"]) + 100,
             ]
 
+        plt.margins(x=0.5)
+        self._adjust_plt(None, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
+
+        if show:
+            plt.show(block=False)
+
+    def _adjust_plt(self, xlim, ylim, xlabel, ylabel, label_fontsize, tick_fontsize):
+        """Internal function to adjust some plot properties."""
+        plt.xlim(xlim)
         plt.ylim(ylim)
         plt.xlabel(xlabel, fontsize=label_fontsize)
         plt.xticks(fontsize=tick_fontsize)
         plt.ylabel(ylabel, fontsize=label_fontsize)
         plt.yticks(fontsize=tick_fontsize)
-        plt.margins(x=0.5)
-
-        if show:
-            plt.show(block=False)
-
-
-def _plot_default_kwargs(kwargs, colors=False, marker=False):
-    if not colors and "color" not in kwargs:
-        kwargs["color"] = "black"
-    if marker and "marker" not in kwargs:
-        kwargs["marker"] = "o"
-    if marker and "markersize" not in kwargs:
-        kwargs["markersize"] = 2
-    if "linestyle" not in kwargs:
-        kwargs["linestyle"] = "-"
-    return kwargs
 
 
 @jit(nopython=True, parallel=True)

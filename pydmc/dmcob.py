@@ -241,48 +241,62 @@ class DmcOb:
         ).drop("level_1", axis=1)
 
     def plot(
-        self,
-        label_fontsize=12,
-        tick_fontsize=10,
-        hspace=0.5,
-        wspace=0.5,
+        self, label_fontsize=12, tick_fontsize=10, hspace=0.5, wspace=0.5, **kwargs
     ):
         """Plot."""
 
         # upper left panel (rt correct)
         plt.subplot2grid((3, 2), (0, 0))
         self.plot_rt_correct(
-            show=False, label_fontsize=label_fontsize, tick_fontsize=tick_fontsize
+            show=False,
+            label_fontsize=label_fontsize,
+            tick_fontsize=tick_fontsize,
+            **kwargs,
         )
 
         # middle left pannel
         plt.subplot2grid((3, 2), (1, 0))
         self.plot_er(
-            show=False, label_fontsize=label_fontsize, tick_fontsize=tick_fontsize
+            show=False,
+            label_fontsize=label_fontsize,
+            tick_fontsize=tick_fontsize,
+            **kwargs,
         )
 
         # bottom left pannel
         plt.subplot2grid((3, 2), (2, 0))
         self.plot_rt_error(
-            show=False, label_fontsize=label_fontsize, tick_fontsize=tick_fontsize
+            show=False,
+            label_fontsize=label_fontsize,
+            tick_fontsize=tick_fontsize,
+            **kwargs,
         )
 
         # upper right panel (cdf)
         plt.subplot2grid((3, 2), (0, 1))
         self.plot_cdf(
-            show=False, label_fontsize=label_fontsize, tick_fontsize=tick_fontsize
+            show=False,
+            label_fontsize=label_fontsize,
+            tick_fontsize=tick_fontsize,
+            **kwargs,
         )
 
         # middle right (left) panel (PDF)
         plt.subplot2grid((3, 2), (1, 1))
         self.plot_caf(
-            show=False, label_fontsize=label_fontsize, tick_fontsize=tick_fontsize
+            show=False,
+            label_fontsize=label_fontsize,
+            tick_fontsize=tick_fontsize,
+            **kwargs,
         )
 
         # lower right (right) panel (CDF)
         plt.subplot2grid((3, 2), (2, 1))
         self.plot_delta(
-            show=False, label_fontsize=label_fontsize, tick_fontsize=tick_fontsize
+            show=False,
+            label_fontsize=label_fontsize,
+            tick_fontsize=tick_fontsize,
+            **kwargs,
         )
 
         plt.subplots_adjust(hspace=hspace, wspace=wspace)
@@ -301,7 +315,9 @@ class DmcOb:
     ):
         """Plot correct RT's."""
 
-        kwargs = _plot_default_kwargs(kwargs, marker=True)
+        kwargs.setdefault("color", "black")
+        kwargs.setdefault("marker", "o")
+        kwargs.setdefault("markersize", 4)
 
         plt.plot(cond_labels, self.summary["rt_cor"], **kwargs)
 
@@ -334,7 +350,9 @@ class DmcOb:
     ):
         """Plot error rate."""
 
-        kwargs = _plot_default_kwargs(kwargs, marker=True)
+        kwargs.setdefault("color", "black")
+        kwargs.setdefault("marker", "o")
+        kwargs.setdefault("markersize", 4)
 
         plt.plot(cond_labels, self.summary["per_err"], **kwargs)
 
@@ -364,7 +382,9 @@ class DmcOb:
     ):
         """Plot error RT's."""
 
-        kwargs = _plot_default_kwargs(kwargs, marker=True)
+        kwargs.setdefault("color", "black")
+        kwargs.setdefault("marker", "o")
+        kwargs.setdefault("markersize", 4)
 
         plt.plot(cond_labels, self.summary["rt_err"], **kwargs)
 
@@ -400,7 +420,8 @@ class DmcOb:
     ):
         """Plot CDF."""
 
-        kwargs = _plot_default_kwargs(kwargs, colors=True, marker=False)
+        kwargs.setdefault("marker", "o")
+        kwargs.setdefault("markersize", 4)
 
         plt.plot(
             self.delta["mean_comp"],
@@ -452,7 +473,8 @@ class DmcOb:
     ):
         """Plot CAF."""
 
-        kwargs = _plot_default_kwargs(kwargs, colors=True, marker=False)
+        kwargs.setdefault("marker", "o")
+        kwargs.setdefault("markersize", 4)
 
         plt.plot(
             self.caf["bin"][self.caf["Comp"] == "comp"],
@@ -497,7 +519,9 @@ class DmcOb:
     ):
         """Plot reaction-time delta plots."""
 
-        kwargs = _plot_default_kwargs(kwargs, marker=True)
+        kwargs.setdefault("color", "black")
+        kwargs.setdefault("marker", "o")
+        kwargs.setdefault("markersize", 4)
 
         plt.plot(self.delta["mean_bin"], self.delta["mean_effect"], **kwargs)
 
@@ -522,15 +546,3 @@ class DmcOb:
 
         if show:
             plt.show(block=False)
-
-
-def _plot_default_kwargs(kwargs, colors=False, marker=False):
-    if not colors and "color" not in kwargs:
-        kwargs["color"] = "black"
-    if marker and "marker" not in kwargs:
-        kwargs["marker"] = "o"
-    if marker and "markersize" not in kwargs:
-        kwargs["markersize"] = 2
-    if "linestyle" not in kwargs:
-        kwargs["linestyle"] = "-"
-    return kwargs

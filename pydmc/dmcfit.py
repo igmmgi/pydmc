@@ -22,7 +22,7 @@ class DmcFit:
         ----------
         """
         self.res_ob = res_ob
-        self.res_th = None
+        self.res_th = DmcSim
         self.n_trls = n_trls
         self.start_vals = start_vals
         self.min_vals = min_vals
@@ -186,20 +186,20 @@ class DmcFit:
 
         return cost_value
 
-    def plot(self):
+    def plot(self, **kwargs):
         """Plot."""
 
         # upper left panel (rt correct)
         plt.subplot2grid((3, 1), (0, 0))
-        self.plot_rt_correct(show=False)
+        self.plot_rt_correct(show=False, **kwargs)
 
         # middle left pannel
         plt.subplot2grid((3, 1), (1, 0))
-        self.plot_er(show=False)
+        self.plot_er(show=False, **kwargs)
 
         # bottom left pannel
         plt.subplot2grid((3, 1), (2, 0))
-        self.plot_rt_error(show=False)
+        self.plot_rt_error(show=False, **kwargs)
 
     def plot_rt_correct(
         self,
@@ -211,40 +211,48 @@ class DmcFit:
         tick_fontsize=10,
         cond_labels=("Compatible", "Incompatible"),
         colors=("black", "grey"),
+        linestyles=("-", "--"),
+        legend_labels=("Predicted", "Observed"),
+        legend_position="lower right",
         **kwargs,
     ):
         """Plot correct RT's."""
+
+        kwargs.setdefault("marker", "o")
+        kwargs.setdefault("markersize", 4)
+
+        plt.plot(
+            cond_labels,
+            self.res_ob.summary["rt_cor"],
+            color=colors[0],
+            linestyle=linestyles[0],
+            label=legend_labels[0],
+            **kwargs,
+        )
+        plt.plot(
+            cond_labels,
+            self.res_th.summary["rt_cor"],
+            color=colors[1],
+            linestyle=linestyles[1],
+            label=legend_labels[1],
+            **kwargs,
+        )
+
         if ylim is None:
             ylim = [
-                min(
-                    min(self.res_th.summary["rt_cor"]),
-                    min(self.res_ob.summary["rt_cor"]),
-                ),
-                max(
-                    max(self.res_th.summary["rt_cor"]),
-                    max(self.res_ob.summary["rt_cor"]),
-                ),
+                np.min(self.res_ob.summary["rt_cor"]) - 100,
+                np.max(self.res_ob.summary["rt_cor"]) + 100,
             ]
-        self.res_th.plot_rt_correct(
-            ylim=ylim,
-            xlabel=xlabel,
-            ylabel=ylabel,
-            label_fontsize=label_fontsize,
-            tick_fontsize=tick_fontsize,
-            cond_labels=cond_labels,
-            color=colors[0],
-            **kwargs,
-        )
-        self.res_ob.plot_rt_correct(
-            ylim=ylim,
-            xlabel=xlabel,
-            ylabel=ylabel,
-            label_fontsize=label_fontsize,
-            tick_fontsize=tick_fontsize,
-            cond_labels=cond_labels,
-            color=colors[1],
-            **kwargs,
-        )
+
+        plt.ylim(ylim)
+        plt.xlabel(xlabel, fontsize=label_fontsize)
+        plt.xticks(fontsize=tick_fontsize)
+        plt.ylabel(ylabel, fontsize=label_fontsize)
+        plt.yticks(fontsize=tick_fontsize)
+        plt.margins(x=0.5)
+
+        if legend_position is not None:
+            plt.legend(loc=legend_position)
 
         if show:
             plt.show(block=False)
@@ -259,26 +267,45 @@ class DmcFit:
         tick_fontsize=10,
         cond_labels=("Compatible", "Incompatible"),
         colors=("black", "grey"),
+        linestyles=("-", "--"),
+        legend_labels=("Predicted", "Observed"),
+        legend_position="upper left",
+        **kwargs,
     ):
         """Plot error rate."""
-        self.res_ob.plot_er(
+
+        kwargs.setdefault("marker", "o")
+        kwargs.setdefault("markersize", 4)
+
+        plt.plot(
+            cond_labels,
+            self.res_ob.summary["per_err"],
             color=colors[0],
-            ylim=ylim,
-            xlabel=xlabel,
-            ylable=ylabel,
-            label_fontsize=label_fontsize,
-            tick_fontsize=tick_fontsize,
-            cond_labels=cond_labels,
+            linestyle=linestyles[0],
+            label=legend_labels[0],
+            **kwargs,
         )
-        self.res_th.plot_er(
+        plt.plot(
+            cond_labels,
+            self.res_th.summary["per_err"],
             color=colors[1],
-            ylim=ylim,
-            xlabel=xlabel,
-            ylable=ylabel,
-            label_fontsize=label_fontsize,
-            tick_fontsize=tick_fontsize,
-            cond_labels=cond_labels,
+            linestyle=linestyles[1],
+            label=legend_labels[1],
+            **kwargs,
         )
+
+        if ylim is None:
+            ylim = [0, np.max(self.summary["per_err"]) + 5]
+
+        plt.ylim(ylim)
+        plt.xlabel(xlabel, fontsize=label_fontsize)
+        plt.xticks(fontsize=tick_fontsize)
+        plt.ylabel(ylabel, fontsize=label_fontsize)
+        plt.yticks(fontsize=tick_fontsize)
+        plt.margins(x=0.5)
+
+        if legend_position is not None:
+            plt.legend(loc=legend_position)
 
         if show:
             plt.show(block=False)
@@ -293,26 +320,48 @@ class DmcFit:
         tick_fontsize=10,
         cond_labels=("Compatible", "Incompatible"),
         colors=("black", "grey"),
+        linestyles=("-", "--"),
+        legend_labels=("Predicted", "Observed"),
+        legend_position="upper right",
+        **kwargs,
     ):
         """Plot error RT's."""
-        self.res_ob.plot_rt_error(
-            ylim=ylim,
+
+        kwargs.setdefault("marker", "o")
+        kwargs.setdefault("markersize", 4)
+
+        plt.plot(
+            cond_labels,
+            self.res_ob.summary["rt_err"],
             color=colors[0],
-            xlabel=xlabel,
-            ylable=ylabel,
-            label_fontsize=label_fontsize,
-            tick_fontsize=tick_fontsize,
-            cond_labels=cond_labels,
+            linestyle=linestyles[0],
+            label=legend_labels[0],
+            **kwargs,
         )
-        self.res_th.plot_rt_error(
-            ylim=ylim,
+        plt.plot(
+            cond_labels,
+            self.res_th.summary["rt_err"],
             color=colors[1],
-            xlabel=xlabel,
-            ylable=ylabel,
-            label_fontsize=label_fontsize,
-            tick_fontsize=tick_fontsize,
-            cond_labels=cond_labels,
+            linestyle=linestyles[1],
+            label=legend_labels[1],
+            **kwargs,
         )
+
+        if ylim is None:
+            ylim = [
+                np.min(self.res_ob.summary["rt_err"]) - 100,
+                np.max(self.res_ob.summary["rt_err"]) + 100,
+            ]
+
+        plt.ylim(ylim)
+        plt.xlabel(xlabel, fontsize=label_fontsize)
+        plt.xticks(fontsize=tick_fontsize)
+        plt.ylabel(ylabel, fontsize=label_fontsize)
+        plt.yticks(fontsize=tick_fontsize)
+        plt.margins(x=0.5)
+
+        if legend_position is not None:
+            plt.legend(loc=legend_position)
 
         if show:
             plt.show(block=False)
@@ -320,33 +369,70 @@ class DmcFit:
     def plot_cdf(
         self,
         show=True,
+        xlim=None,
         ylim=(0, 1.05),
         xlabel=None,
-        cond_labels=("Compatible", "Incompatible"),
-        ylabel="RT Error [ms]",
+        cond_labels=(
+            "Compatible Observed",
+            "Incompatible Observed",
+            "Compatible Predicted",
+            "Incompatible Predicted",
+        ),
+        ylabel="CDF",
         label_fontsize=12,
         tick_fontsize=10,
-        colors=("green", "grey"),
+        colors=("green", "red"),
+        **kwargs,
     ):
 
-        self.res_ob.plot_cdf(
-            ylim=ylim,
+        kwargs.setdefault("marker", "o")
+        kwargs.setdefault("markersize", 4)
+
+        plt.plot(
+            self.res_ob.delta["mean_comp"],
+            np.linspace(0, 1, self.n_delta + 2)[1:-1],
             color=colors[0],
-            xlabel=xlabel,
-            ylable=ylabel,
-            label_fontsize=label_fontsize,
-            tick_fontsize=tick_fontsize,
-            cond_labels=cond_labels,
+            label=cond_labels[0],
+            **kwargs,
         )
-        self.res_th.plot_cdf(
-            ylim=ylim,
+        plt.plot(
+            self.res_ob.delta["mean_incomp"],
+            np.linspace(0, 1, self.n_delta + 2)[1:-1],
             color=colors[1],
-            xlabel=xlabel,
-            ylable=ylabel,
-            label_fontsize=label_fontsize,
-            tick_fontsize=tick_fontsize,
-            cond_labels=cond_labels,
+            label=cond_labels[1],
+            **kwargs,
         )
+        plt.plot(
+            self.res_th.delta["mean_comp"],
+            np.linspace(0, 1, self.n_delta + 2)[1:-1],
+            color=colors[0],
+            label=cond_labels[2],
+            **kwargs,
+        )
+        plt.plot(
+            self.res_th.delta["mean_incomp"],
+            np.linspace(0, 1, self.n_delta + 2)[1:-1],
+            color=colors[1],
+            label=cond_labels[3],
+            **kwargs,
+        )
+
+        if xlim is None:
+            xlim = [
+                np.min(self.res_ob.delta.mean_bin) - 100,
+                np.max(self.res_ob.delta.mean_bin) + 100,
+            ]
+
+        plt.xlim(xlim)
+        plt.ylim(ylim)
+        plt.xlabel(xlabel, fontsize=label_fontsize)
+        plt.xticks(fontsize=tick_fontsize)
+        plt.ylabel(ylabel, fontsize=label_fontsize)
+        plt.yticks(fontsize=tick_fontsize)
+        plt.margins(x=0.5)
+
+        # if legend_position is not None:
+        #     plt.legend(loc=legend_position)
 
         if show:
             plt.show(block=False)
@@ -359,31 +445,59 @@ class DmcFit:
         ylabel="CAF",
         label_fontsize=12,
         tick_fontsize=10,
-        cond_labels=("Compatible", "Incompatible"),
+        cond_labels=(
+            "Compatible Observed",
+            "Incompatible Observed",
+            "Compatible Predicted",
+            "Incompatible Predicted",
+        ),
         colors=("green", "red"),
         **kwargs,
     ):
 
-        self.res_ob.plot_caf(
-            ylim=ylim,
+        kwargs.setdefault("marker", "o")
+        kwargs.setdefault("markersize", 4)
+
+        plt.plot(
+            self.res_ob.caf["bin"][self.res_ob.caf["Comp"] == "comp"],
+            self.res_ob.caf["Error"][self.res_ob.caf["Comp"] == "comp"],
             color=colors[0],
-            xlabel=xlabel,
-            ylable=ylabel,
-            label_fontsize=label_fontsize,
-            tick_fontsize=tick_fontsize,
-            cond_labels=cond_labels,
+            label=cond_labels[0],
             **kwargs,
         )
-        self.res_th.plot_caf(
-            ylim=ylim,
+        plt.plot(
+            self.res_ob.caf["bin"][self.res_ob.caf["Comp"] == "incomp"],
+            self.res_ob.caf["Error"][self.res_ob.caf["Comp"] == "incomp"],
             color=colors[1],
-            xlabel=xlabel,
-            ylable=ylabel,
-            label_fontsize=label_fontsize,
-            tick_fontsize=tick_fontsize,
-            cond_labels=cond_labels,
+            label=cond_labels[1],
             **kwargs,
         )
+
+        plt.plot(
+            self.res_th.caf["bin"][self.res_th.caf["Comp"] == "comp"],
+            self.res_th.caf["Error"][self.res_th.caf["Comp"] == "comp"],
+            color=colors[0],
+            label=cond_labels[0],
+            **kwargs,
+        )
+        plt.plot(
+            self.res_th.caf["bin"][self.res_th.caf["Comp"] == "incomp"],
+            self.res_th.caf["Error"][self.res_th.caf["Comp"] == "incomp"],
+            color=colors[1],
+            label=cond_labels[1],
+            **kwargs,
+        )
+
+        plt.ylim(ylim)
+        plt.xticks(range(1, self.n_caf + 1), [str(x) for x in range(1, self.n_caf + 1)])
+        plt.xlabel(xlabel, fontsize=label_fontsize)
+        plt.xticks(fontsize=tick_fontsize)
+        plt.ylabel(ylabel, fontsize=label_fontsize)
+        plt.yticks(fontsize=tick_fontsize)
+
+        # if legend_position is not None:
+        #     plt.legend(loc=legend_position)
+
         if show:
             plt.show(block=False)
 
@@ -396,27 +510,32 @@ class DmcFit:
         ylabel=r"$\Delta$",
         label_fontsize=12,
         tick_fontsize=10,
+        cond_labels=("Observed", "Predicted"),
         **kwargs,
     ):
         """Plot reaction-time delta plots."""
 
-        self.res_ob.plot_delta(
-            ylim=ylim,
-            xlim=xlim,
-            xlabel=xlabel,
-            ylable=ylabel,
-            label_fontsize=label_fontsize,
-            tick_fontsize=tick_fontsize,
-            **kwargs,
-        )
-        self.res_th.plot_delta(
-            ylim=ylim,
-            xlim=xlim,
-            xlabel=xlabel,
-            ylable=ylabel,
-            label_fontsize=label_fontsize,
-            tick_fontsize=tick_fontsize,
-            **kwargs,
-        )
+        kwargs.setdefault("color", "black")
+        kwargs.setdefault("marker", "o")
+        kwargs.setdefault("markersize", 4)
+
+        plt.plot(self.res_ob.delta["mean_bin"], self.res_ob.delta["mean_effect"], **kwargs)
+        plt.plot(self.res_th.delta["mean_bin"], self.res_th.delta["mean_effect"], **kwargs)
+
+        if xlim is None:
+            xlim = [0, 1000]
+        if ylim is None:
+            ylim = [-50, 100]
+
+        plt.xlim(xlim)
+        plt.ylim(ylim)
+        plt.xlabel(xlabel, fontsize=label_fontsize)
+        plt.xticks(fontsize=tick_fontsize)
+        plt.ylabel(ylabel, fontsize=label_fontsize)
+        plt.yticks(fontsize=tick_fontsize)
+
+        if show:
+            plt.show(block=False)
+
         if show:
             plt.show(block=False)
