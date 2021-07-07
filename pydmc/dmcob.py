@@ -164,7 +164,7 @@ class DmcOb:
 
         def caffun(x, n):
             # remove outliers and bin data
-            x = x[x.outlier == False].reset_index()
+            x = x[x.outlier == 0].reset_index()
             cafbin = np.digitize(
                 x.loc[:, "RT"],
                 np.percentile(x.loc[:, "RT"], np.linspace(0, 100, n + 1)),
@@ -193,7 +193,7 @@ class DmcOb:
         """Calculate compatibility effect + delta values for correct trials."""
 
         def deltafun(x, n):
-            x = x[(x.outlier == False) & (x.Error == 0)].reset_index()
+            x = x[(x.outlier == 0) & (x.Error == 0)].reset_index()
 
             nbin = np.arange(1, n + 1)
             mean_comp = mquantiles(
@@ -321,18 +321,10 @@ class DmcOb:
 
         plt.plot(cond_labels, self.summary["rt_cor"], **kwargs)
 
-        if ylim is None:
-            ylim = [
-                np.min(self.summary["rt_cor"]) - 100,
-                np.max(self.summary["rt_cor"]) + 100,
-            ]
+        ylim = ylim or [np.min(self.summary["rt_cor"]) - 100, np.max(self.summary["rt_cor"]) + 100]
 
-        plt.ylim(ylim)
-        plt.xlabel(xlabel, fontsize=label_fontsize)
-        plt.xticks(fontsize=tick_fontsize)
-        plt.ylabel(ylabel, fontsize=label_fontsize)
-        plt.yticks(fontsize=tick_fontsize)
         plt.margins(x=0.5)
+        _adjust_plt(None, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
 
         if show:
             plt.show(block=False)
@@ -356,15 +348,10 @@ class DmcOb:
 
         plt.plot(cond_labels, self.summary["per_err"], **kwargs)
 
-        if ylim is None:
-            ylim = [0, np.max(self.summary["per_err"]) + 5]
+        ylim = ylim or [0, np.max(self.summary["per_err"]) + 5]
 
-        plt.ylim(ylim)
-        plt.xlabel(xlabel, fontsize=label_fontsize)
-        plt.xticks(fontsize=tick_fontsize)
-        plt.ylabel(ylabel, fontsize=label_fontsize)
-        plt.yticks(fontsize=tick_fontsize)
         plt.margins(x=0.5)
+        _adjust_plt(None, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
 
         if show:
             plt.show(block=False)
@@ -388,18 +375,10 @@ class DmcOb:
 
         plt.plot(cond_labels, self.summary["rt_err"], **kwargs)
 
-        if ylim is None:
-            ylim = [
-                np.min(self.summary["rt_err"]) - 100,
-                np.max(self.summary["rt_err"]) + 100,
-            ]
+        ylim = ylim or [np.min(self.summary["rt_err"]) - 100, np.max(self.summary["rt_err"]) + 100]
 
-        plt.ylim(ylim)
-        plt.xlabel(xlabel, fontsize=label_fontsize)
-        plt.xticks(fontsize=tick_fontsize)
-        plt.ylabel(ylabel, fontsize=label_fontsize)
-        plt.yticks(fontsize=tick_fontsize)
         plt.margins(x=0.5)
+        _adjust_plt(None, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
 
         if show:
             plt.show(block=False)
@@ -411,7 +390,7 @@ class DmcOb:
         ylim=(0, 1.05),
         xlabel=None,
         cond_labels=("Compatible", "Incompatible"),
-        ylabel="RT Error [ms]",
+        ylabel="CDF",
         label_fontsize=12,
         tick_fontsize=10,
         legend_position="lower right",
@@ -438,19 +417,10 @@ class DmcOb:
             **kwargs,
         )
 
-        if xlim is None:
-            xlim = [
-                np.min(self.delta.mean_bin) - 100,
-                np.max(self.delta.mean_bin) + 100,
-            ]
+        xlim = xlim or [np.min(self.delta.mean_bin) - 100, np.max(self.delta.mean_bin) + 100]
+        ylim = ylim or [0, 1.05]
 
-        plt.xlim(xlim)
-        plt.ylim(ylim)
-        plt.xlabel(xlabel, fontsize=label_fontsize)
-        plt.xticks(fontsize=tick_fontsize)
-        plt.ylabel(ylabel, fontsize=label_fontsize)
-        plt.yticks(fontsize=tick_fontsize)
-        plt.margins(x=0.5)
+        _adjust_plt(xlim, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
 
         if legend_position is not None:
             plt.legend(loc=legend_position)
@@ -492,13 +462,9 @@ class DmcOb:
             **kwargs,
         )
 
-        plt.ylim(ylim)
         plt.xticks(range(1, self.n_caf + 1), [str(x) for x in range(1, self.n_caf + 1)])
-        plt.xlabel(xlabel, fontsize=label_fontsize)
-        plt.xticks(fontsize=tick_fontsize)
-        plt.ylabel(ylabel, fontsize=label_fontsize)
-        plt.yticks(fontsize=tick_fontsize)
-        plt.margins(x=0.5)
+
+        _adjust_plt(None, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
 
         if legend_position is not None:
             plt.legend(loc=legend_position)
@@ -525,24 +491,21 @@ class DmcOb:
 
         plt.plot(self.delta["mean_bin"], self.delta["mean_effect"], **kwargs)
 
-        if xlim is None:
-            xlim = [
-                np.min(self.delta.mean_bin) - 100,
-                np.max(self.delta.mean_bin) + 100,
-            ]
-        if ylim is None:
-            ylim = [
-                np.min(self.delta.mean_effect) - 25,
-                np.max(self.delta.mean_effect) + 25,
-            ]
+        xlim = xlim or [np.min(self.delta.mean_bin) - 100, np.max(self.delta.mean_bin) + 100]
+        ylim = ylim or [np.min(self.delta.mean_effect) - 25, np.max(self.delta.mean_effect) + 25]
 
-        plt.xlim(xlim)
-        plt.ylim(ylim)
-        plt.xlabel(xlabel, fontsize=label_fontsize)
-        plt.xticks(fontsize=tick_fontsize)
-        plt.ylabel(ylabel, fontsize=label_fontsize)
-        plt.yticks(fontsize=tick_fontsize)
         plt.margins(x=0.5)
+        _adjust_plt(xlim, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
 
         if show:
             plt.show(block=False)
+
+
+def _adjust_plt(xlim, ylim, xlabel, ylabel, label_fontsize, tick_fontsize):
+    """Internal function to adjust some plot properties."""
+    plt.xlim(xlim)
+    plt.ylim(ylim)
+    plt.xlabel(xlabel, fontsize=label_fontsize)
+    plt.xticks(fontsize=tick_fontsize)
+    plt.ylabel(ylabel, fontsize=label_fontsize)
+    plt.yticks(fontsize=tick_fontsize)

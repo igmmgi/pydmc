@@ -244,12 +244,8 @@ class DmcFit:
                 np.max(self.res_ob.summary["rt_cor"]) + 100,
             ]
 
-        plt.ylim(ylim)
-        plt.xlabel(xlabel, fontsize=label_fontsize)
-        plt.xticks(fontsize=tick_fontsize)
-        plt.ylabel(ylabel, fontsize=label_fontsize)
-        plt.yticks(fontsize=tick_fontsize)
         plt.margins(x=0.5)
+        _adjust_plt(None, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
 
         if legend_position is not None:
             plt.legend(loc=legend_position)
@@ -297,12 +293,8 @@ class DmcFit:
         if ylim is None:
             ylim = [0, np.max(self.summary["per_err"]) + 5]
 
-        plt.ylim(ylim)
-        plt.xlabel(xlabel, fontsize=label_fontsize)
-        plt.xticks(fontsize=tick_fontsize)
-        plt.ylabel(ylabel, fontsize=label_fontsize)
-        plt.yticks(fontsize=tick_fontsize)
         plt.margins(x=0.5)
+        _adjust_plt(None, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
 
         if legend_position is not None:
             plt.legend(loc=legend_position)
@@ -353,12 +345,8 @@ class DmcFit:
                 np.max(self.res_ob.summary["rt_err"]) + 100,
             ]
 
-        plt.ylim(ylim)
-        plt.xlabel(xlabel, fontsize=label_fontsize)
-        plt.xticks(fontsize=tick_fontsize)
-        plt.ylabel(ylabel, fontsize=label_fontsize)
-        plt.yticks(fontsize=tick_fontsize)
         plt.margins(x=0.5)
+        _adjust_plt(None, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
 
         if legend_position is not None:
             plt.legend(loc=legend_position)
@@ -423,13 +411,10 @@ class DmcFit:
                 np.max(self.res_ob.delta.mean_bin) + 100,
             ]
 
-        plt.xlim(xlim)
-        plt.ylim(ylim)
-        plt.xlabel(xlabel, fontsize=label_fontsize)
-        plt.xticks(fontsize=tick_fontsize)
-        plt.ylabel(ylabel, fontsize=label_fontsize)
-        plt.yticks(fontsize=tick_fontsize)
+        plt.xticks(range(1, self.n_caf + 1), [str(x) for x in range(1, self.n_caf + 1)])
+
         plt.margins(x=0.5)
+        _adjust_plt(None, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
 
         # if legend_position is not None:
         #     plt.legend(loc=legend_position)
@@ -488,12 +473,8 @@ class DmcFit:
             **kwargs,
         )
 
-        plt.ylim(ylim)
         plt.xticks(range(1, self.n_caf + 1), [str(x) for x in range(1, self.n_caf + 1)])
-        plt.xlabel(xlabel, fontsize=label_fontsize)
-        plt.xticks(fontsize=tick_fontsize)
-        plt.ylabel(ylabel, fontsize=label_fontsize)
-        plt.yticks(fontsize=tick_fontsize)
+        _adjust_plt(None, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
 
         # if legend_position is not None:
         #     plt.legend(loc=legend_position)
@@ -522,20 +503,23 @@ class DmcFit:
         plt.plot(self.res_ob.delta["mean_bin"], self.res_ob.delta["mean_effect"], **kwargs)
         plt.plot(self.res_th.delta["mean_bin"], self.res_th.delta["mean_effect"], **kwargs)
 
-        if xlim is None:
-            xlim = [0, 1000]
-        if ylim is None:
-            ylim = [-50, 100]
+        xlim = xlim or [0, 1000]
+        ylim = ylim or [-50, 100]
 
-        plt.xlim(xlim)
-        plt.ylim(ylim)
-        plt.xlabel(xlabel, fontsize=label_fontsize)
-        plt.xticks(fontsize=tick_fontsize)
-        plt.ylabel(ylabel, fontsize=label_fontsize)
-        plt.yticks(fontsize=tick_fontsize)
+        _adjust_plt(None, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
 
         if show:
             plt.show(block=False)
 
         if show:
             plt.show(block=False)
+
+
+def _adjust_plt(xlim, ylim, xlabel, ylabel, label_fontsize, tick_fontsize):
+    """Internal function to adjust some plot properties."""
+    plt.xlim(xlim)
+    plt.ylim(ylim)
+    plt.xlabel(xlabel, fontsize=label_fontsize)
+    plt.xticks(fontsize=tick_fontsize)
+    plt.ylabel(ylabel, fontsize=label_fontsize)
+    plt.yticks(fontsize=tick_fontsize)

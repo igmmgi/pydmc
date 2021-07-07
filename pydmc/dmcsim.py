@@ -16,29 +16,29 @@ class DmcSim:
     """DMC Simulation."""
 
     def __init__(
-        self,
-        amp=20,
-        tau=30,
-        aa_shape=2,
-        drc=0.5,
-        sigma=4,
-        bnds=75,
-        res_dist=1,
-        res_mean=300,
-        res_sd=30,
-        n_trls=100000,
-        t_max=1000,
-        var_sp=False,
-        sp_shape=3,
-        var_dr=False,
-        dr_lim=(0.1, 0.7),
-        dr_shape=3,
-        n_caf=5,
-        n_delta=19,
-        full_data=False,
-        n_trls_data=5,
-        run_simulation=True,
-        plt_figs=False,
+            self,
+            amp=20,
+            tau=30,
+            aa_shape=2,
+            drc=0.5,
+            sigma=4,
+            bnds=75,
+            res_dist=1,
+            res_mean=300,
+            res_sd=30,
+            n_trls=100000,
+            t_max=1000,
+            var_sp=False,
+            sp_shape=3,
+            var_dr=False,
+            dr_lim=(0.1, 0.7),
+            dr_shape=3,
+            n_caf=5,
+            n_delta=19,
+            full_data=False,
+            n_trls_data=5,
+            run_simulation=True,
+            plt_figs=False,
     ):
         """
         Parameters
@@ -100,8 +100,8 @@ class DmcSim:
 
         Examples
         --------
-        >>> from pydmc.dmc import DmcSim
-        >>> dmc_sin = DmcSim(full_data=True)
+        >>> from pydmc.dmcsim import DmcSim
+        >>> dmc_sim = DmcSim(full_data=True)
         >>> dmc_sim.plot()                 # Fig 3
         >>> dmc_sim = DmcSim()
         >>> dmc_sim.plot()                 # Fig 3 (part)
@@ -137,12 +137,9 @@ class DmcSim:
         self.n_trls_data = n_trls_data
 
         self.tim = np.arange(1, self.t_max + 1, 1)
-        self.eq4 = (
-            self.amp
-            * np.exp(-self.tim / self.tau)
-            * (np.exp(1) * self.tim / (self.aa_shape - 1) / self.tau)
-            ** (self.aa_shape - 1)
-        )
+        self.eq4 = (self.amp * np.exp(-self.tim / self.tau) *
+                    (np.exp(1) * self.tim /
+                     (self.aa_shape - 1) / self.tau) ** (self.aa_shape - 1))
         self.dat = []
         self.dat_trials = []
         self.xt = []
@@ -176,10 +173,9 @@ class DmcSim:
 
             dr = self._dr()
             sp = self._sp()
-            drc = (
-                comp * self.eq4 * ((self.aa_shape - 1) / self.tim - 1 / self.tau)
-                + np.tile(dr, (self.t_max, 1)).T
-            )
+            drc = (comp * self.eq4 *
+                   ((self.aa_shape - 1) / self.tim - 1 / self.tau) +
+                   np.tile(dr, (self.t_max, 1)).T)
 
             # random process
             xt = drc + (self.sigma * rand_nums)
@@ -195,20 +191,21 @@ class DmcSim:
             rt[rt == 1] = self.t_max
 
             if self.res_dist == 1:
-                res_dist = np.random.normal(self.res_mean, self.res_sd, self.n_trls)
+                res_dist = np.random.normal(self.res_mean, self.res_sd,
+                                            self.n_trls)
             else:
-                r = np.max([0.01, np.sqrt((self.res_sd * self.res_sd / (1 / 12)))])
-                res_dist = np.random.uniform(self.res_mean - r, self.res_mean + r)
+                r = np.max(
+                    [0.01,
+                     np.sqrt((self.res_sd * self.res_sd / (1 / 12)))])
+                res_dist = np.random.uniform(self.res_mean - r,
+                                             self.res_mean + r)
 
             self.dat.append(
-                np.vstack(
-                    (
-                        rt + res_dist,
-                        xt[np.arange(len(xt)), rt - 1] < self.bnds,
-                    )
-                )
-            )
-            self.dat_trials.append(xt[0 : self.n_trls_data])
+                np.vstack((
+                    rt + res_dist,
+                    xt[np.arange(len(xt)), rt - 1] < self.bnds,
+                )))
+            self.dat_trials.append(xt[0:self.n_trls_data])
             self.xt.append(xt.mean(0))
 
         self._calc_caf_values()
@@ -219,10 +216,10 @@ class DmcSim:
         """Run simulation using numba."""
 
         for comp in [1, -1]:
-
             dr = self._dr()
             sp = self._sp()
-            drc = comp * self.eq4 * ((self.aa_shape - 1) / self.tim - 1 / self.tau)
+            drc = comp * self.eq4 * (
+                    (self.aa_shape - 1) / self.tim - 1 / self.tau)
 
             self.dat.append(
                 _run_simulation_numba(
@@ -236,8 +233,7 @@ class DmcSim:
                     self.res_sd,
                     self.bnds,
                     self.n_trls,
-                )
-            )
+                ))
 
         self._calc_caf_values()
         self._calc_delta_values()
@@ -282,8 +278,10 @@ class DmcSim:
             return pd.DataFrame((1 - x.groupby(["bin"])["Error"].mean())[:-1])
 
         # create temp pandas dataframe
-        dfc = pd.DataFrame(self.dat[0].T, columns=["RT", "Error"]).assign(Comp="comp")
-        dfi = pd.DataFrame(self.dat[1].T, columns=["RT", "Error"]).assign(Comp="incomp")
+        dfc = pd.DataFrame(self.dat[0].T,
+                           columns=["RT", "Error"]).assign(Comp="comp")
+        dfi = pd.DataFrame(self.dat[1].T,
+                           columns=["RT", "Error"]).assign(Comp="incomp")
         df = pd.concat([dfc, dfi])
 
         self.caf = df.groupby(["Comp"]).apply(caffun, self.n_caf).reset_index()
@@ -293,15 +291,13 @@ class DmcSim:
 
         nbin = np.arange(1, self.n_delta + 1)
 
-        # alphap, betap values to match R quantile 5
-        # (see scipy.stats.mstats.mquantiles)
+        # alphap, betap values to match R quantile 5 (see scipy.stats.mstats.mquantiles)
         mean_comp = mquantiles(
             self.dat[0][0],
             np.linspace(0, 1, self.n_delta + 2)[1:-1],
             alphap=0.5,
             betap=0.5,
         )
-
         mean_incomp = mquantiles(
             self.dat[1][0],
             np.linspace(0, 1, self.n_delta + 2)[1:-1],
@@ -314,9 +310,11 @@ class DmcSim:
 
         dat = np.array([nbin, mean_comp, mean_incomp, mean_bin, mean_effect]).T
 
-        self.delta = pd.DataFrame(
-            dat, columns=["bin", "mean_comp", "mean_incomp", "mean_bin", "mean_effect"]
-        )
+        self.delta = pd.DataFrame(dat,
+                                  columns=[
+                                      "bin", "mean_comp", "mean_incomp",
+                                      "mean_bin", "mean_effect"
+                                  ])
 
     @staticmethod
     def rand_beta(lim=(0, 1), shape=3, n_trls=1):
@@ -326,27 +324,29 @@ class DmcSim:
 
         return x
 
-    def plot(
-        self,
-        fig_type="summary1",
-        label_fontsize=12,
-        tick_fontsize=10,
-        hspace=0.5,
-        wspace=0.5,
-        **kwargs
-    ):
+    def plot(self,
+             fig_type="summary1",
+             label_fontsize=12,
+             tick_fontsize=10,
+             hspace=0.5,
+             wspace=0.5,
+             **kwargs):
         """Plot"""
         if fig_type == "summary1" and not self.full_data:
             fig_type = "summary2"
 
         if fig_type == "summary1":
-            self._plot_summary1(label_fontsize, tick_fontsize, hspace, wspace, **kwargs)
+            self._plot_summary1(label_fontsize, tick_fontsize, hspace, wspace,
+                                **kwargs)
         elif fig_type == "summary2":
-            self._plot_summary2(label_fontsize, tick_fontsize, hspace, wspace, **kwargs)
+            self._plot_summary2(label_fontsize, tick_fontsize, hspace, wspace,
+                                **kwargs)
         elif fig_type == "summary3":
-            self._plot_summary3(label_fontsize, tick_fontsize, hspace, wspace, **kwargs)
+            self._plot_summary3(label_fontsize, tick_fontsize, hspace, wspace,
+                                **kwargs)
 
-    def _plot_summary1(self, label_fontsize, tick_fontsize, hspace, wspace, **kwargs):
+    def _plot_summary1(self, label_fontsize, tick_fontsize, hspace, wspace,
+                       **kwargs):
 
         # upper left panel (activation)
         plt.subplot2grid((6, 4), (0, 0), rowspan=3, colspan=2)
@@ -405,7 +405,8 @@ class DmcSim:
         plt.subplots_adjust(hspace=hspace, wspace=wspace)
         plt.show(block=False)
 
-    def _plot_summary2(self, label_fontsize, tick_fontsize, hspace, wspace, **kwargs):
+    def _plot_summary2(self, label_fontsize, tick_fontsize, hspace, wspace,
+                       **kwargs):
 
         # upper right (left) panel (PDF)
         plt.subplot2grid((3, 2), (0, 0))
@@ -446,7 +447,8 @@ class DmcSim:
         plt.subplots_adjust(hspace=hspace, wspace=wspace)
         plt.show(block=False)
 
-    def _plot_summary3(self, label_fontsize, tick_fontsize, hspace, wspace, **kwargs):
+    def _plot_summary3(self, label_fontsize, tick_fontsize, hspace, wspace,
+                       **kwargs):
 
         # upper right (left) panel (PDF)
         plt.subplot2grid((3, 1), (0, 0))
@@ -478,20 +480,18 @@ class DmcSim:
         plt.subplots_adjust(hspace=hspace, wspace=wspace)
         plt.show(block=False)
 
-    def plot_activation(
-        self,
-        show=True,
-        xlim=None,
-        ylim=None,
-        xlabel="Time (ms)",
-        ylabel="E[X(t)]",
-        label_fontsize=12,
-        tick_fontsize=10,
-        cond_labels=("Compatible", "Incompatible"),
-        legend_position="best",
-        colors=("green", "red"),
-        **kwargs
-    ):
+    def plot_activation(self,
+                        show=True,
+                        xlim=None,
+                        ylim=None,
+                        xlabel="Time (ms)",
+                        ylabel="E[X(t)]",
+                        label_fontsize=12,
+                        tick_fontsize=10,
+                        cond_labels=("Compatible", "Incompatible"),
+                        legend_position="best",
+                        colors=("green", "red"),
+                        **kwargs):
         """Plot activation."""
 
         if not self.xt:
@@ -504,16 +504,10 @@ class DmcSim:
         plt.plot(self.xt[1], color=colors[1], label=cond_labels[1], **kwargs)
         plt.plot(np.cumsum(np.repeat(self.drc, self.t_max)), color="black", **kwargs)
 
-        if xlim is None:
-            xlim = [0, self.t_max]
-
-        if ylim is None:
-            ylim = [-self.bnds - 20, self.bnds + 20]
-
-        plt.plot(xlim, [self.bnds, self.bnds], "k--")
-        plt.plot(xlim, [-self.bnds, -self.bnds], "k--")
-
-        self._adjust_plt(xlim, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
+        xlim = xlim or [0, self.t_max]
+        ylim = ylim or [-self.bnds - 20, self.bnds + 20]
+        self._plot_bounds()
+        _adjust_plt(xlim, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
 
         if legend_position is not None:
             plt.legend(loc=legend_position)
@@ -521,25 +515,23 @@ class DmcSim:
         if show:
             plt.show(block=False)
 
-
-    def plot_trials(
-        self,
-        show=True,
-        xlim=None,
-        ylim=None,
-        xlabel="Time (ms)",
-        ylabel="X(t)",
-        label_fontsize=12,
-        tick_fontsize=10,
-        cond_labels=("Compatible", "Incompatible"),
-        legend_position="upper right",
-        colors=("green", "red"),
-        **kwargs
-    ):
+    def plot_trials(self,
+                    show=True,
+                    xlim=None,
+                    ylim=None,
+                    xlabel="Time (ms)",
+                    ylabel="X(t)",
+                    label_fontsize=12,
+                    tick_fontsize=10,
+                    cond_labels=("Compatible", "Incompatible"),
+                    legend_position="upper right",
+                    colors=("green", "red"),
+                    **kwargs):
         """Plot individual trials."""
 
         if not self.xt:
-            print("Plotting individual trials function requires full_data=True")
+            print(
+                "Plotting individual trials function requires full_data=True")
             return
 
         for trl in range(5):
@@ -547,14 +539,16 @@ class DmcSim:
                 labels = cond_labels
             else:
                 labels = [None, None]
-            idx = np.where(np.abs(self.dat_trials[0][trl, :]) >= self.bnds)[0][0]
+            idx = np.where(
+                np.abs(self.dat_trials[0][trl, :]) >= self.bnds)[0][0]
             plt.plot(
                 self.dat_trials[0][trl][0:idx],
                 color=colors[0],
                 label=labels[0],
                 **kwargs,
             )
-            idx = np.where(np.abs(self.dat_trials[1][trl, :]) >= self.bnds)[0][0]
+            idx = np.where(
+                np.abs(self.dat_trials[1][trl, :]) >= self.bnds)[0][0]
             plt.plot(
                 self.dat_trials[1][trl][0:idx],
                 color=colors[1],
@@ -562,16 +556,10 @@ class DmcSim:
                 **kwargs,
             )
 
-        if xlim is None:
-            xlim = [0, self.t_max]
-
-        if ylim is None:
-            ylim = [-self.bnds - 20, self.bnds + 20]
-
-        plt.plot(xlim, [self.bnds, self.bnds], "k--")
-        plt.plot(xlim, [-self.bnds, -self.bnds], "k--")
-
-        self._adjust_plt(xlim, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
+        xlim = xlim or [0, self.t_max]
+        ylim = ylim or [-self.bnds - 20, self.bnds + 20]
+        self._plot_bounds()
+        _adjust_plt(xlim, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
 
         if legend_position is not None:
             plt.legend(loc=legend_position)
@@ -579,35 +567,41 @@ class DmcSim:
         if show:
             plt.show(block=False)
 
-    def plot_pdf(
-        self,
-        show=True,
-        xlim=None,
-        ylim=None,
-        xlabel="Time (ms)",
-        ylabel="PDF",
-        label_fontsize=12,
-        tick_fontsize=10,
-        cond_labels=("Compatible", "Incompatible"),
-        legend_position="upper right",
-        colors=("green", "red"),
-        **kwargs
-    ):
+    def _plot_bounds(self):
+        plt.axhline(y=self.bnds, color="black", linestyle="--")
+        plt.axhline(y=-self.bnds, color="black", linestyle="--")
+
+    def plot_pdf(self,
+                 show=True,
+                 xlim=None,
+                 ylim=None,
+                 xlabel="Time (ms)",
+                 ylabel="PDF",
+                 label_fontsize=12,
+                 tick_fontsize=10,
+                 cond_labels=("Compatible", "Incompatible"),
+                 legend_position="upper right",
+                 colors=("green", "red"),
+                 **kwargs):
         """Plot PDF."""
 
         comp_pdf, axes1 = fastKDE.pdf(self.dat[0][0])
         incomp_pdf, axes2 = fastKDE.pdf(self.dat[1][0])
 
-        plt.plot(axes1, comp_pdf, color=colors[0], label=cond_labels[0], **kwargs)
-        plt.plot(axes2, incomp_pdf, color=colors[1], label=cond_labels[1], **kwargs)
+        plt.plot(axes1,
+                 comp_pdf,
+                 color=colors[0],
+                 label=cond_labels[0],
+                 **kwargs)
+        plt.plot(axes2,
+                 incomp_pdf,
+                 color=colors[1],
+                 label=cond_labels[1],
+                 **kwargs)
 
-        if xlim is None:
-            xlim = [0, self.t_max]
-
-        if ylim is None:
-            ylim = [0, 0.01]
-
-        self._adjust_plt(xlim, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
+        xlim = xlim or [0, self.t_max]
+        ylim = ylim or [0, 0.01]
+        _adjust_plt(xlim, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
 
         if legend_position is not None:
             plt.legend(loc=legend_position)
@@ -615,20 +609,18 @@ class DmcSim:
         if show:
             plt.show(block=False)
 
-    def plot_cdf(
-        self,
-        show=True,
-        xlim=None,
-        ylim=(0, 1.0),
-        xlabel="Time (ms)",
-        ylabel="CDF",
-        label_fontsize=12,
-        tick_fontsize=10,
-        cond_labels=("Compatible", "Incompatible"),
-        legend_position="lower right",
-        colors=("green", "red"),
-        **kwargs
-    ):
+    def plot_cdf(self,
+                 show=True,
+                 xlim=None,
+                 ylim=(0, 1.0),
+                 xlabel="Time (ms)",
+                 ylabel="CDF",
+                 label_fontsize=12,
+                 tick_fontsize=10,
+                 cond_labels=("Compatible", "Incompatible"),
+                 legend_position="lower right",
+                 colors=("green", "red"),
+                 **kwargs):
         """Plot CDF."""
 
         comp_pdf, axes1 = fastKDE.pdf(self.dat[0][0])
@@ -649,10 +641,8 @@ class DmcSim:
             **kwargs,
         )
 
-        if xlim is None:
-            xlim = [0, self.t_max]
-
-        self._adjust_plt(xlim, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
+        xlim = xlim or [0, self.t_max]
+        _adjust_plt(xlim, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
 
         if legend_position is not None:
             plt.legend(loc=legend_position)
@@ -660,19 +650,17 @@ class DmcSim:
         if show:
             plt.show(block=False)
 
-    def plot_caf(
-        self,
-        show=True,
-        ylim=(0, 1.1),
-        xlabel="RT Bin",
-        ylabel="CAF",
-        label_fontsize=12,
-        tick_fontsize=10,
-        cond_labels=("Compatible", "Incompatible"),
-        legend_position="lower right",
-        colors=("green", "red"),
-        **kwargs
-    ):
+    def plot_caf(self,
+                 show=True,
+                 ylim=(0, 1.1),
+                 xlabel="RT Bin",
+                 ylabel="CAF",
+                 label_fontsize=12,
+                 tick_fontsize=10,
+                 cond_labels=("Compatible", "Incompatible"),
+                 legend_position="lower right",
+                 colors=("green", "red"),
+                 **kwargs):
         """Plot CAF."""
 
         kwargs.setdefault("marker", "o")
@@ -695,8 +683,7 @@ class DmcSim:
         )
 
         plt.xticks(range(1, self.n_caf + 1), [str(x) for x in range(1, self.n_caf + 1)])
-
-        self._adjust_plt(None, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
+        _adjust_plt(None, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
 
         if legend_position is not None:
             plt.legend(loc=legend_position)
@@ -704,17 +691,15 @@ class DmcSim:
         if show:
             plt.show(block=False)
 
-    def plot_delta(
-        self,
-        show=True,
-        xlim=None,
-        ylim=None,
-        xlabel="Time (ms)",
-        ylabel=r"$\Delta$",
-        label_fontsize=12,
-        tick_fontsize=10,
-        **kwargs
-    ):
+    def plot_delta(self,
+                   show=True,
+                   xlim=None,
+                   ylim=None,
+                   xlabel="Time (ms)",
+                   ylabel=r"$\Delta$",
+                   label_fontsize=12,
+                   tick_fontsize=10,
+                   **kwargs):
         """Plot reaction-time delta plots."""
 
         kwargs.setdefault("color", "black")
@@ -723,12 +708,9 @@ class DmcSim:
 
         plt.plot(self.delta["mean_bin"], self.delta["mean_effect"], **kwargs)
 
-        if xlim is None:
-            xlim = [0, self.t_max]
-        if ylim is None:
-            ylim = [-50, 100]
-
-        self._adjust_plt(xlim, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
+        xlim = xlim or [0, self.t_max]
+        ylim = ylim or [-50, 100]
+        _adjust_plt(xlim, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
 
         if show:
             plt.show(block=False)
@@ -740,22 +722,22 @@ class DmcSim:
 
     def _sp(self):
         if self.var_sp:
-            return self.rand_beta((-self.bnds, self.bnds), self.sp_shape, self.n_trls)
+            return self.rand_beta((-self.bnds, self.bnds), self.sp_shape,
+                                  self.n_trls)
         return np.zeros(self.n_trls)
 
-    def plot_rt_correct(
-        self,
-        show=True,
-        ylim=None,
-        xlabel=None,
-        ylabel="RT Correct [ms]",
-        label_fontsize=12,
-        tick_fontsize=10,
-        cond_labels=("Compatible", "Incompatible"),
-        **kwargs
-    ):
+    def plot_rt_correct(self,
+                        show=True,
+                        ylim=None,
+                        xlabel=None,
+                        ylabel="RT Correct [ms]",
+                        label_fontsize=12,
+                        tick_fontsize=10,
+                        cond_labels=("Compatible", "Incompatible"),
+                        **kwargs):
         """Plot correct RT's."""
 
+        kwargs.setdefault("color", "black")
         kwargs.setdefault("marker", "o")
         kwargs.setdefault("markersize", 4)
 
@@ -768,52 +750,48 @@ class DmcSim:
             ]
 
         plt.margins(x=0.5)
-
-        self._adjust_plt(None, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
+        _adjust_plt(None, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
 
         if show:
             plt.show(block=False)
 
-    def plot_er(
-        self,
-        show=True,
-        ylim=None,
-        xlabel=None,
-        ylabel="Error Rate [%]",
-        label_fontsize=12,
-        tick_fontsize=10,
-        cond_labels=("Compatible", "Incompatible"),
-        **kwargs
-    ):
+    def plot_er(self,
+                show=True,
+                ylim=None,
+                xlabel=None,
+                ylabel="Error Rate [%]",
+                label_fontsize=12,
+                tick_fontsize=10,
+                cond_labels=("Compatible", "Incompatible"),
+                **kwargs):
         """Plot error rate"""
 
+        kwargs.setdefault("color", "black")
         kwargs.setdefault("marker", "o")
         kwargs.setdefault("markersize", 4)
 
         plt.plot(cond_labels, self.summary["per_err"], **kwargs)
 
-        if ylim is None:
-            ylim = [0, np.max(self.summary["per_err"]) + 5]
+        ylim = ylim or [0, np.max(self.summary["per_err"]) + 5]
 
         plt.margins(x=0.5)
-        self._adjust_plt(None, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
+        _adjust_plt(None, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
 
         if show:
             plt.show(block=False)
 
-    def plot_rt_error(
-        self,
-        show=True,
-        ylim=None,
-        xlabel=None,
-        ylabel="RT Error [ms]",
-        label_fontsize=12,
-        tick_fontsize=10,
-        cond_labels=("Compatible", "Incompatible"),
-        **kwargs
-    ):
+    def plot_rt_error(self,
+                      show=True,
+                      ylim=None,
+                      xlabel=None,
+                      ylabel="RT Error [ms]",
+                      label_fontsize=12,
+                      tick_fontsize=10,
+                      cond_labels=("Compatible", "Incompatible"),
+                      **kwargs):
         """Plot error RT's."""
 
+        kwargs.setdefault("color", "black")
         kwargs.setdefault("marker", "o")
         kwargs.setdefault("markersize", 4)
 
@@ -826,26 +804,15 @@ class DmcSim:
             ]
 
         plt.margins(x=0.5)
-        self._adjust_plt(None, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
+        _adjust_plt(None, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
 
         if show:
             plt.show(block=False)
 
-    def _adjust_plt(self, xlim, ylim, xlabel, ylabel, label_fontsize, tick_fontsize):
-        """Internal function to adjust some plot properties."""
-        plt.xlim(xlim)
-        plt.ylim(ylim)
-        plt.xlabel(xlabel, fontsize=label_fontsize)
-        plt.xticks(fontsize=tick_fontsize)
-        plt.ylabel(ylabel, fontsize=label_fontsize)
-        plt.yticks(fontsize=tick_fontsize)
-
 
 @jit(nopython=True, parallel=True)
-def _run_simulation_numba(
-    drc, sp, dr, t_max, sigma, res_dist_type, res_mean, res_sd, bnds, n_trls
-):
-
+def _run_simulation_numba(drc, sp, dr, t_max, sigma, res_dist_type, res_mean,
+                          res_sd, bnds, n_trls):
     dat = np.vstack((np.ones(n_trls) * t_max, np.zeros(n_trls)))
     if res_dist_type == 1:
         res_dist = np.random.normal(res_mean, res_sd, n_trls)
@@ -863,3 +830,13 @@ def _run_simulation_numba(
                 break
 
     return dat
+
+
+def _adjust_plt(xlim, ylim, xlabel, ylabel, label_fontsize, tick_fontsize):
+    """Internal function to adjust some plot properties."""
+    plt.xlim(xlim)
+    plt.ylim(ylim)
+    plt.xlabel(xlabel, fontsize=label_fontsize)
+    plt.xticks(fontsize=tick_fontsize)
+    plt.ylabel(ylabel, fontsize=label_fontsize)
+    plt.yticks(fontsize=tick_fontsize)

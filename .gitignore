@@ -84,3 +84,4 @@ venv.bak/
 /site
 
 .vscode/
+.idea/
