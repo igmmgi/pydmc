@@ -106,12 +106,25 @@ class DmcFit:
         self.fit = fmin(
             self._function_to_minimise,
             np.array(list(self.start_vals.values())),
-            (self.res_ob,),
             **kwargs,
         )
 
+    def summary(self):
+        """Print summary of DmcFit."""
+        print(
+            "DMC Fitted Parameter Values:\n",
+            f"amp:{self.res_th.amp:4.1f}",
+            f"tau:{self.res_th.tau:4.1f}",
+            f"drc:{self.res_th.drc:4.2f}",
+            f"bnds:{self.res_th.bnds:4.1f}",
+            f"res_mean:{self.res_th.res_mean:4.0f}",
+            f"res_sd:{self.res_th.res_sd:4.1f}",
+            f"aa_shape:{self.res_th.aa_shape:4.1f}",
+            f"sp_shape:{self.res_th.sp_shape:4.1f}",
+            f"| cost={self.cost_value:.2f}",
+        )
 
-    def _function_to_minimise(self, x, res_ob):
+    def _function_to_minimise(self, x):
 
         # bounds hack
         x = np.maximum(x, list(self.min_vals.values()))
@@ -135,6 +148,8 @@ class DmcFit:
             res_dist=1,
         )
 
+        self.cost_value = DmcFit.calculate_cost_value_rmse(self.res_th, self.res_ob)
+
         print(
             f"amp:{x[0]:4.1f}",
             f"tau:{x[1]:4.1f}",
@@ -143,11 +158,9 @@ class DmcFit:
             f"res_mean:{x[4]:4.0f}",
             f"res_sd:{x[5]:4.1f}",
             f"aa_shape:{x[6]:4.1f}",
-            f"sp_shape={x[7]:4.1f}",
+            f"sp_shape:{x[7]:4.1f}",
             f"| cost={self.cost_value:.2f}",
         )
-
-        self.cost_value = DmcFit.calculate_cost_value_rmse(self.res_th, res_ob)
 
         return self.cost_value
 
@@ -176,9 +189,6 @@ class DmcFit:
         weight_caf = (1 - weight_rt) * 1500
 
         cost_value = (weight_caf * cost_caf) + (weight_rt * cost_rt)
-
-        if np.isnan(cost_value):
-            cost_value = np.inf
 
         return cost_value
 
@@ -290,7 +300,7 @@ class DmcFit:
         plt.margins(x=0.5)
         _adjust_plt(None, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
 
-        if legend_position is not None:
+        if legend_position:
             plt.legend(loc=legend_position)
 
         if show:
@@ -339,7 +349,7 @@ class DmcFit:
         plt.margins(x=0.5)
         _adjust_plt(None, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
 
-        if legend_position is not None:
+        if legend_position:
             plt.legend(loc=legend_position)
 
         if show:
@@ -391,7 +401,7 @@ class DmcFit:
         plt.margins(x=0.5)
         _adjust_plt(None, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
 
-        if legend_position is not None:
+        if legend_position:
             plt.legend(loc=legend_position)
 
         if show:
@@ -461,7 +471,7 @@ class DmcFit:
         plt.margins(x=0.5)
         _adjust_plt(xlim, None, xlabel, ylabel, label_fontsize, tick_fontsize)
 
-        if legend_position is not None:
+        if legend_position:
             plt.legend(loc=legend_position)
 
         if show:
@@ -525,7 +535,7 @@ class DmcFit:
         plt.xticks(range(1, self.n_caf + 1), [str(x) for x in range(1, self.n_caf + 1)])
         _adjust_plt(None, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
 
-        if legend_position is not None:
+        if legend_position:
             plt.legend(loc=legend_position)
 
         if show:
@@ -567,12 +577,11 @@ class DmcFit:
             **kwargs,
         )
 
-        xlim = xlim or [0, 1000]
-        ylim = ylim or [-50, 100]
+        xlim = xlim or [np.min(self.res_ob.delta.mean_bin) - 100, np.max(self.res_ob.delta.mean_bin) + 100]
+        ylim = ylim or [np.min(self.res_ob.delta.mean_effect) - 25, np.max(self.res_ob.delta.mean_effect) + 25]
+        _adjust_plt(xlim, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
 
-        _adjust_plt(None, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
-
-        if legend_position is not None:
+        if legend_position:
             plt.legend(loc=legend_position)
 
         if show:

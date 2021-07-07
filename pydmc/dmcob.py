@@ -422,7 +422,7 @@ class DmcOb:
 
         _adjust_plt(xlim, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
 
-        if legend_position is not None:
+        if legend_position:
             plt.legend(loc=legend_position)
 
         if show:
@@ -466,7 +466,7 @@ class DmcOb:
 
         _adjust_plt(None, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
 
-        if legend_position is not None:
+        if legend_position:
             plt.legend(loc=legend_position)
 
         if show:

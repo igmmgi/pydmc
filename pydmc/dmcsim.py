@@ -561,7 +561,7 @@ class DmcSim:
         self._plot_bounds()
         _adjust_plt(xlim, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
 
-        if legend_position is not None:
+        if legend_position:
             plt.legend(loc=legend_position)
 
         if show:
@@ -597,7 +597,7 @@ class DmcSim:
         ylim = ylim or [0, 0.01]
         _adjust_plt(xlim, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
 
-        if legend_position is not None:
+        if legend_position:
             plt.legend(loc=legend_position)
 
         if show:
@@ -683,7 +683,7 @@ class DmcSim:
         plt.xticks(range(1, self.n_caf + 1), [str(x) for x in range(1, self.n_caf + 1)])
         _adjust_plt(None, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
 
-        if legend_position is not None:
+        if legend_position:
             plt.legend(loc=legend_position)
 
         if show:
@@ -708,8 +708,8 @@ class DmcSim:
 
         plt.plot(self.delta["mean_bin"], self.delta["mean_effect"], **kwargs)
 
-        xlim = xlim or [0, self.t_max]
-        ylim = ylim or [-50, 100]
+        xlim = xlim or [np.min(self.delta.mean_bin) - 100, np.max(self.delta.mean_bin) + 100]
+        ylim = ylim or [np.min(self.delta.mean_effect) - 25, np.max(self.delta.mean_effect) + 25]
         _adjust_plt(xlim, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
 
         if show:
