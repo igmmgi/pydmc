@@ -16,29 +16,30 @@ class DmcSim:
     """DMC Simulation."""
 
     def __init__(
-            self,
-            amp=20,
-            tau=30,
-            aa_shape=2,
-            drc=0.5,
-            sigma=4,
-            bnds=75,
-            res_dist=1,
-            res_mean=300,
-            res_sd=30,
-            n_trls=100000,
-            t_max=1000,
-            var_sp=False,
-            sp_shape=3,
-            var_dr=False,
-            dr_lim=(0.1, 0.7),
-            dr_shape=3,
-            n_caf=5,
-            n_delta=19,
-            full_data=False,
-            n_trls_data=5,
-            run_simulation=True,
-            plt_figs=False,
+        self,
+        amp=20,
+        tau=30,
+        aa_shape=2,
+        drc=0.5,
+        sigma=4,
+        bnds=75,
+        res_dist=1,
+        res_mean=300,
+        res_sd=30,
+        n_trls=100000,
+        t_max=1000,
+        var_sp=False,
+        sp_lim=(-75, 75),
+        sp_shape=3,
+        var_dr=False,
+        dr_lim=(0.1, 0.7),
+        dr_shape=3,
+        n_caf=5,
+        n_delta=19,
+        full_data=False,
+        n_trls_data=5,
+        run_simulation=True,
+        plt_figs=False,
     ):
         """
         Parameters
@@ -67,6 +68,8 @@ class DmcSim:
             number of time points per trial
         var_sp: bool, optional
             variable starting point
+        sp_lim: tuple, optional
+            limiit range of distribution of starting point
         sp_shape: int, optional
             shape parameter of starting point distribution
         var_dr: bool, optional
@@ -130,6 +133,7 @@ class DmcSim:
         self.dr_lim = dr_lim
         self.dr_shape = dr_shape
         self.var_sp = var_sp
+        self.sp_lim = sp_lim
         self.sp_shape = sp_shape
         self.n_caf = n_caf
         self.n_delta = n_delta
@@ -137,9 +141,12 @@ class DmcSim:
         self.n_trls_data = n_trls_data
 
         self.tim = np.arange(1, self.t_max + 1, 1)
-        self.eq4 = (self.amp * np.exp(-self.tim / self.tau) *
-                    (np.exp(1) * self.tim /
-                     (self.aa_shape - 1) / self.tau) ** (self.aa_shape - 1))
+        self.eq4 = (
+            self.amp
+            * np.exp(-self.tim / self.tau)
+            * (np.exp(1) * self.tim / (self.aa_shape - 1) / self.tau)
+            ** (self.aa_shape - 1)
+        )
         self.dat = []
         self.dat_trials = []
         self.xt = []
@@ -173,9 +180,10 @@ class DmcSim:
 
             dr = self._dr()
             sp = self._sp()
-            drc = (comp * self.eq4 *
-                   ((self.aa_shape - 1) / self.tim - 1 / self.tau) +
-                   np.tile(dr, (self.t_max, 1)).T)
+            drc = (
+                comp * self.eq4 * ((self.aa_shape - 1) / self.tim - 1 / self.tau)
+                + np.tile(dr, (self.t_max, 1)).T
+            )
 
             # random process
             xt = drc + (self.sigma * rand_nums)
@@ -191,21 +199,20 @@ class DmcSim:
             rt[rt == 1] = self.t_max
 
             if self.res_dist == 1:
-                res_dist = np.random.normal(self.res_mean, self.res_sd,
-                                            self.n_trls)
+                res_dist = np.random.normal(self.res_mean, self.res_sd, self.n_trls)
             else:
-                r = np.max(
-                    [0.01,
-                     np.sqrt((self.res_sd * self.res_sd / (1 / 12)))])
-                res_dist = np.random.uniform(self.res_mean - r,
-                                             self.res_mean + r)
+                r = np.max([0.01, np.sqrt((self.res_sd * self.res_sd / (1 / 12)))])
+                res_dist = np.random.uniform(self.res_mean - r, self.res_mean + r)
 
             self.dat.append(
-                np.vstack((
-                    rt + res_dist,
-                    xt[np.arange(len(xt)), rt - 1] < self.bnds,
-                )))
-            self.dat_trials.append(xt[0:self.n_trls_data])
+                np.vstack(
+                    (
+                        rt + res_dist,
+                        xt[np.arange(len(xt)), rt - 1] < self.bnds,
+                    )
+                )
+            )
+            self.dat_trials.append(xt[0 : self.n_trls_data])
             self.xt.append(xt.mean(0))
 
         self._calc_caf_values()
@@ -218,8 +225,7 @@ class DmcSim:
         for comp in [1, -1]:
             dr = self._dr()
             sp = self._sp()
-            drc = comp * self.eq4 * (
-                    (self.aa_shape - 1) / self.tim - 1 / self.tau)
+            drc = comp * self.eq4 * ((self.aa_shape - 1) / self.tim - 1 / self.tau)
 
             self.dat.append(
                 _run_simulation_numba(
@@ -233,7 +239,8 @@ class DmcSim:
                     self.res_sd,
                     self.bnds,
                     self.n_trls,
-                ))
+                )
+            )
 
         self._calc_caf_values()
         self._calc_delta_values()
@@ -278,10 +285,8 @@ class DmcSim:
             return pd.DataFrame((1 - x.groupby(["bin"])["Error"].mean())[:-1])
 
         # create temp pandas dataframe
-        dfc = pd.DataFrame(self.dat[0].T,
-                           columns=["RT", "Error"]).assign(Comp="comp")
-        dfi = pd.DataFrame(self.dat[1].T,
-                           columns=["RT", "Error"]).assign(Comp="incomp")
+        dfc = pd.DataFrame(self.dat[0].T, columns=["RT", "Error"]).assign(Comp="comp")
+        dfi = pd.DataFrame(self.dat[1].T, columns=["RT", "Error"]).assign(Comp="incomp")
         df = pd.concat([dfc, dfi])
 
         self.caf = df.groupby(["Comp"]).apply(caffun, self.n_caf).reset_index()
@@ -310,11 +315,9 @@ class DmcSim:
 
         dat = np.array([nbin, mean_comp, mean_incomp, mean_bin, mean_effect]).T
 
-        self.delta = pd.DataFrame(dat,
-                                  columns=[
-                                      "bin", "mean_comp", "mean_incomp",
-                                      "mean_bin", "mean_effect"
-                                  ])
+        self.delta = pd.DataFrame(
+            dat, columns=["bin", "mean_comp", "mean_incomp", "mean_bin", "mean_effect"]
+        )
 
     @staticmethod
     def rand_beta(lim=(0, 1), shape=3, n_trls=1):
@@ -324,29 +327,27 @@ class DmcSim:
 
         return x
 
-    def plot(self,
-             fig_type="summary1",
-             label_fontsize=12,
-             tick_fontsize=10,
-             hspace=0.5,
-             wspace=0.5,
-             **kwargs):
+    def plot(
+        self,
+        fig_type="summary1",
+        label_fontsize=12,
+        tick_fontsize=10,
+        hspace=0.5,
+        wspace=0.5,
+        **kwargs
+    ):
         """Plot"""
         if fig_type == "summary1" and not self.full_data:
             fig_type = "summary2"
 
         if fig_type == "summary1":
-            self._plot_summary1(label_fontsize, tick_fontsize, hspace, wspace,
-                                **kwargs)
+            self._plot_summary1(label_fontsize, tick_fontsize, hspace, wspace, **kwargs)
         elif fig_type == "summary2":
-            self._plot_summary2(label_fontsize, tick_fontsize, hspace, wspace,
-                                **kwargs)
+            self._plot_summary2(label_fontsize, tick_fontsize, hspace, wspace, **kwargs)
         elif fig_type == "summary3":
-            self._plot_summary3(label_fontsize, tick_fontsize, hspace, wspace,
-                                **kwargs)
+            self._plot_summary3(label_fontsize, tick_fontsize, hspace, wspace, **kwargs)
 
-    def _plot_summary1(self, label_fontsize, tick_fontsize, hspace, wspace,
-                       **kwargs):
+    def _plot_summary1(self, label_fontsize, tick_fontsize, hspace, wspace, **kwargs):
 
         # upper left panel (activation)
         plt.subplot2grid((6, 4), (0, 0), rowspan=3, colspan=2)
@@ -405,8 +406,7 @@ class DmcSim:
         plt.subplots_adjust(hspace=hspace, wspace=wspace)
         plt.show(block=False)
 
-    def _plot_summary2(self, label_fontsize, tick_fontsize, hspace, wspace,
-                       **kwargs):
+    def _plot_summary2(self, label_fontsize, tick_fontsize, hspace, wspace, **kwargs):
 
         # upper right (left) panel (PDF)
         plt.subplot2grid((3, 2), (0, 0))
@@ -447,8 +447,7 @@ class DmcSim:
         plt.subplots_adjust(hspace=hspace, wspace=wspace)
         plt.show(block=False)
 
-    def _plot_summary3(self, label_fontsize, tick_fontsize, hspace, wspace,
-                       **kwargs):
+    def _plot_summary3(self, label_fontsize, tick_fontsize, hspace, wspace, **kwargs):
 
         # upper right (left) panel (PDF)
         plt.subplot2grid((3, 1), (0, 0))
@@ -480,18 +479,20 @@ class DmcSim:
         plt.subplots_adjust(hspace=hspace, wspace=wspace)
         plt.show(block=False)
 
-    def plot_activation(self,
-                        show=True,
-                        xlim=None,
-                        ylim=None,
-                        xlabel="Time (ms)",
-                        ylabel="E[X(t)]",
-                        label_fontsize=12,
-                        tick_fontsize=10,
-                        cond_labels=("Compatible", "Incompatible"),
-                        legend_position="best",
-                        colors=("green", "red"),
-                        **kwargs):
+    def plot_activation(
+        self,
+        show=True,
+        xlim=None,
+        ylim=None,
+        xlabel="Time (ms)",
+        ylabel="E[X(t)]",
+        label_fontsize=12,
+        tick_fontsize=10,
+        cond_labels=("Compatible", "Incompatible"),
+        legend_position="best",
+        colors=("green", "red"),
+        **kwargs
+    ):
         """Plot activation."""
 
         if not self.xt:
@@ -515,23 +516,24 @@ class DmcSim:
         if show:
             plt.show(block=False)
 
-    def plot_trials(self,
-                    show=True,
-                    xlim=None,
-                    ylim=None,
-                    xlabel="Time (ms)",
-                    ylabel="X(t)",
-                    label_fontsize=12,
-                    tick_fontsize=10,
-                    cond_labels=("Compatible", "Incompatible"),
-                    legend_position="upper right",
-                    colors=("green", "red"),
-                    **kwargs):
+    def plot_trials(
+        self,
+        show=True,
+        xlim=None,
+        ylim=None,
+        xlabel="Time (ms)",
+        ylabel="X(t)",
+        label_fontsize=12,
+        tick_fontsize=10,
+        cond_labels=("Compatible", "Incompatible"),
+        legend_position="upper right",
+        colors=("green", "red"),
+        **kwargs
+    ):
         """Plot individual trials."""
 
         if not self.xt:
-            print(
-                "Plotting individual trials function requires full_data=True")
+            print("Plotting individual trials function requires full_data=True")
             return
 
         for trl in range(5):
@@ -539,16 +541,14 @@ class DmcSim:
                 labels = cond_labels
             else:
                 labels = [None, None]
-            idx = np.where(
-                np.abs(self.dat_trials[0][trl, :]) >= self.bnds)[0][0]
+            idx = np.where(np.abs(self.dat_trials[0][trl, :]) >= self.bnds)[0][0]
             plt.plot(
                 self.dat_trials[0][trl][0:idx],
                 color=colors[0],
                 label=labels[0],
                 **kwargs,
             )
-            idx = np.where(
-                np.abs(self.dat_trials[1][trl, :]) >= self.bnds)[0][0]
+            idx = np.where(np.abs(self.dat_trials[1][trl, :]) >= self.bnds)[0][0]
             plt.plot(
                 self.dat_trials[1][trl][0:idx],
                 color=colors[1],
@@ -571,33 +571,27 @@ class DmcSim:
         plt.axhline(y=self.bnds, color="black", linestyle="--")
         plt.axhline(y=-self.bnds, color="black", linestyle="--")
 
-    def plot_pdf(self,
-                 show=True,
-                 xlim=None,
-                 ylim=None,
-                 xlabel="Time (ms)",
-                 ylabel="PDF",
-                 label_fontsize=12,
-                 tick_fontsize=10,
-                 cond_labels=("Compatible", "Incompatible"),
-                 legend_position="upper right",
-                 colors=("green", "red"),
-                 **kwargs):
+    def plot_pdf(
+        self,
+        show=True,
+        xlim=None,
+        ylim=None,
+        xlabel="Time (ms)",
+        ylabel="PDF",
+        label_fontsize=12,
+        tick_fontsize=10,
+        cond_labels=("Compatible", "Incompatible"),
+        legend_position="upper right",
+        colors=("green", "red"),
+        **kwargs
+    ):
         """Plot PDF."""
 
         comp_pdf, axes1 = fastKDE.pdf(self.dat[0][0])
         incomp_pdf, axes2 = fastKDE.pdf(self.dat[1][0])
 
-        plt.plot(axes1,
-                 comp_pdf,
-                 color=colors[0],
-                 label=cond_labels[0],
-                 **kwargs)
-        plt.plot(axes2,
-                 incomp_pdf,
-                 color=colors[1],
-                 label=cond_labels[1],
-                 **kwargs)
+        plt.plot(axes1, comp_pdf, color=colors[0], label=cond_labels[0], **kwargs)
+        plt.plot(axes2, incomp_pdf, color=colors[1], label=cond_labels[1], **kwargs)
 
         xlim = xlim or [0, self.t_max]
         ylim = ylim or [0, 0.01]
@@ -609,18 +603,20 @@ class DmcSim:
         if show:
             plt.show(block=False)
 
-    def plot_cdf(self,
-                 show=True,
-                 xlim=None,
-                 ylim=(0, 1.0),
-                 xlabel="Time (ms)",
-                 ylabel="CDF",
-                 label_fontsize=12,
-                 tick_fontsize=10,
-                 cond_labels=("Compatible", "Incompatible"),
-                 legend_position="lower right",
-                 colors=("green", "red"),
-                 **kwargs):
+    def plot_cdf(
+        self,
+        show=True,
+        xlim=None,
+        ylim=(0, 1.0),
+        xlabel="Time (ms)",
+        ylabel="CDF",
+        label_fontsize=12,
+        tick_fontsize=10,
+        cond_labels=("Compatible", "Incompatible"),
+        legend_position="lower right",
+        colors=("green", "red"),
+        **kwargs
+    ):
         """Plot CDF."""
 
         comp_pdf, axes1 = fastKDE.pdf(self.dat[0][0])
@@ -650,17 +646,19 @@ class DmcSim:
         if show:
             plt.show(block=False)
 
-    def plot_caf(self,
-                 show=True,
-                 ylim=(0, 1.1),
-                 xlabel="RT Bin",
-                 ylabel="CAF",
-                 label_fontsize=12,
-                 tick_fontsize=10,
-                 cond_labels=("Compatible", "Incompatible"),
-                 legend_position="lower right",
-                 colors=("green", "red"),
-                 **kwargs):
+    def plot_caf(
+        self,
+        show=True,
+        ylim=(0, 1.1),
+        xlabel="RT Bin",
+        ylabel="CAF",
+        label_fontsize=12,
+        tick_fontsize=10,
+        cond_labels=("Compatible", "Incompatible"),
+        legend_position="lower right",
+        colors=("green", "red"),
+        **kwargs
+    ):
         """Plot CAF."""
 
         kwargs.setdefault("marker", "o")
@@ -691,15 +689,17 @@ class DmcSim:
         if show:
             plt.show(block=False)
 
-    def plot_delta(self,
-                   show=True,
-                   xlim=None,
-                   ylim=None,
-                   xlabel="Time (ms)",
-                   ylabel=r"$\Delta$",
-                   label_fontsize=12,
-                   tick_fontsize=10,
-                   **kwargs):
+    def plot_delta(
+        self,
+        show=True,
+        xlim=None,
+        ylim=None,
+        xlabel="Time (ms)",
+        ylabel=r"$\Delta$",
+        label_fontsize=12,
+        tick_fontsize=10,
+        **kwargs
+    ):
         """Plot reaction-time delta plots."""
 
         kwargs.setdefault("color", "black")
@@ -722,19 +722,22 @@ class DmcSim:
 
     def _sp(self):
         if self.var_sp:
-            return self.rand_beta((-self.bnds, self.bnds), self.sp_shape,
-                                  self.n_trls)
+            return self.rand_beta(
+                (self.sp_lim[0], self.sp_lim[1]), self.sp_shape, self.n_trls
+            )
         return np.zeros(self.n_trls)
 
-    def plot_rt_correct(self,
-                        show=True,
-                        ylim=None,
-                        xlabel=None,
-                        ylabel="RT Correct [ms]",
-                        label_fontsize=12,
-                        tick_fontsize=10,
-                        cond_labels=("Compatible", "Incompatible"),
-                        **kwargs):
+    def plot_rt_correct(
+        self,
+        show=True,
+        ylim=None,
+        xlabel=None,
+        ylabel="RT Correct [ms]",
+        label_fontsize=12,
+        tick_fontsize=10,
+        cond_labels=("Compatible", "Incompatible"),
+        **kwargs
+    ):
         """Plot correct RT's."""
 
         kwargs.setdefault("color", "black")
@@ -755,15 +758,17 @@ class DmcSim:
         if show:
             plt.show(block=False)
 
-    def plot_er(self,
-                show=True,
-                ylim=None,
-                xlabel=None,
-                ylabel="Error Rate [%]",
-                label_fontsize=12,
-                tick_fontsize=10,
-                cond_labels=("Compatible", "Incompatible"),
-                **kwargs):
+    def plot_er(
+        self,
+        show=True,
+        ylim=None,
+        xlabel=None,
+        ylabel="Error Rate [%]",
+        label_fontsize=12,
+        tick_fontsize=10,
+        cond_labels=("Compatible", "Incompatible"),
+        **kwargs
+    ):
         """Plot error rate"""
 
         kwargs.setdefault("color", "black")
@@ -780,15 +785,17 @@ class DmcSim:
         if show:
             plt.show(block=False)
 
-    def plot_rt_error(self,
-                      show=True,
-                      ylim=None,
-                      xlabel=None,
-                      ylabel="RT Error [ms]",
-                      label_fontsize=12,
-                      tick_fontsize=10,
-                      cond_labels=("Compatible", "Incompatible"),
-                      **kwargs):
+    def plot_rt_error(
+        self,
+        show=True,
+        ylim=None,
+        xlabel=None,
+        ylabel="RT Error [ms]",
+        label_fontsize=12,
+        tick_fontsize=10,
+        cond_labels=("Compatible", "Incompatible"),
+        **kwargs
+    ):
         """Plot error RT's."""
 
         kwargs.setdefault("color", "black")
@@ -811,8 +818,9 @@ class DmcSim:
 
 
 @jit(nopython=True, parallel=True)
-def _run_simulation_numba(drc, sp, dr, t_max, sigma, res_dist_type, res_mean,
-                          res_sd, bnds, n_trls):
+def _run_simulation_numba(
+    drc, sp, dr, t_max, sigma, res_dist_type, res_mean, res_sd, bnds, n_trls
+):
     dat = np.vstack((np.ones(n_trls) * t_max, np.zeros(n_trls)))
     if res_dist_type == 1:
         res_dist = np.random.normal(res_mean, res_sd, n_trls)
