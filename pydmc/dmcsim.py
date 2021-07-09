@@ -164,62 +164,15 @@ class DmcSim:
         """Run simulation."""
 
         if self.full_data:
-            self._run_simulation_numpy()
+            self._run_simulation_full()
         else:
-            self._run_simulation_numba()
-
-    def _run_simulation_numpy(self):
-        """Run simulation using numpy."""
-
-        rand_nums = None
-        for comp in [1, -1]:
-            if rand_nums is None:
-                rand_nums = np.random.randn(self.n_trls, self.t_max)
-            else:
-                np.random.shuffle(rand_nums)
-
-            dr = self._dr()
-            sp = self._sp()
-            drc = (
-                comp * self.eq4 * ((self.aa_shape - 1) / self.tim - 1 / self.tau)
-                + np.tile(dr, (self.t_max, 1)).T
-            )
-
-            # random process
-            xt = drc + (self.sigma * rand_nums)
-
-            # variable starting point
-            xt[:, 0] += sp
-
-            # cumulate activation over time
-            xt = np.cumsum(xt, 1)
-
-            # reaction time
-            rt = np.argmax(np.abs(xt) > self.bnds, axis=1) + 1
-            rt[rt == 1] = self.t_max
-
-            if self.res_dist == 1:
-                res_dist = np.random.normal(self.res_mean, self.res_sd, self.n_trls)
-            else:
-                r = np.max([0.01, np.sqrt((self.res_sd * self.res_sd / (1 / 12)))])
-                res_dist = np.random.uniform(self.res_mean - r, self.res_mean + r)
-
-            self.dat.append(
-                np.vstack(
-                    (
-                        rt + res_dist,
-                        xt[np.arange(len(xt)), rt - 1] < self.bnds,
-                    )
-                )
-            )
-            self.dat_trials.append(xt[0 : self.n_trls_data])
-            self.xt.append(xt.mean(0))
+            self._run_simulation()
 
         self._calc_caf_values()
         self._calc_delta_values()
         self._results_summary()
 
-    def _run_simulation_numba(self):
+    def _run_simulation(self):
         """Run simulation using numba."""
 
         for comp in [1, -1]:
@@ -228,7 +181,7 @@ class DmcSim:
             drc = comp * self.eq4 * ((self.aa_shape - 1) / self.tim - 1 / self.tau)
 
             self.dat.append(
-                _run_simulation_numba(
+                _run_simulation(
                     drc,
                     sp,
                     dr,
@@ -242,9 +195,31 @@ class DmcSim:
                 )
             )
 
-        self._calc_caf_values()
-        self._calc_delta_values()
-        self._results_summary()
+    def _run_simulation_full(self):
+        """Run simulation using numba."""
+
+        for comp in [1, -1]:
+            dr = self._dr()
+            sp = self._sp()
+            drc = comp * self.eq4 * ((self.aa_shape - 1) / self.tim - 1 / self.tau)
+
+            activation, trials, dat = _run_simulation_full(
+                drc,
+                sp,
+                dr,
+                self.t_max,
+                self.sigma,
+                self.res_dist,
+                self.res_mean,
+                self.res_sd,
+                self.bnds,
+                self.n_trls,
+                self.n_trls_data,
+            )
+
+            self.xt.append(activation)
+            self.dat_trials.append(trials)
+            self.dat.append(dat)
 
     def _results_summary(self):
         """Create results summary table."""
@@ -536,7 +511,7 @@ class DmcSim:
             print("Plotting individual trials function requires full_data=True")
             return
 
-        for trl in range(5):
+        for trl in range(self.n_trls_data):
             if trl == 0:
                 labels = cond_labels
             else:
@@ -708,8 +683,14 @@ class DmcSim:
 
         plt.plot(self.delta["mean_bin"], self.delta["mean_effect"], **kwargs)
 
-        xlim = xlim or [np.min(self.delta.mean_bin) - 100, np.max(self.delta.mean_bin) + 100]
-        ylim = ylim or [np.min(self.delta.mean_effect) - 25, np.max(self.delta.mean_effect) + 25]
+        xlim = xlim or [
+            np.min(self.delta.mean_bin) - 100,
+            np.max(self.delta.mean_bin) + 100,
+        ]
+        ylim = ylim or [
+            np.min(self.delta.mean_effect) - 25,
+            np.max(self.delta.mean_effect) + 25,
+        ]
         _adjust_plt(xlim, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
 
         if show:
@@ -818,9 +799,10 @@ class DmcSim:
 
 
 @jit(nopython=True, parallel=True)
-def _run_simulation_numba(
+def _run_simulation(
     drc, sp, dr, t_max, sigma, res_dist_type, res_mean, res_sd, bnds, n_trls
 ):
+
     dat = np.vstack((np.ones(n_trls) * t_max, np.zeros(n_trls)))
     if res_dist_type == 1:
         res_dist = np.random.normal(res_mean, res_sd, n_trls)
@@ -838,6 +820,56 @@ def _run_simulation_numba(
                 break
 
     return dat
+
+
+@jit(nopython=True, parallel=True)
+def _run_simulation_full(
+    drc,
+    sp,
+    dr,
+    t_max,
+    sigma,
+    res_dist_type,
+    res_mean,
+    res_sd,
+    bnds,
+    n_trls,
+    n_trls_data,
+):
+
+    dat = np.vstack((np.ones(n_trls) * t_max, np.zeros(n_trls)))
+    if res_dist_type == 1:
+        res_dist = np.random.normal(res_mean, res_sd, n_trls)
+    else:
+        width = max([0.01, np.sqrt((res_sd * res_sd / (1 / 12)))])
+        res_dist = np.random.uniform(res_mean - width, res_mean + width, n_trls)
+
+    activation = np.zeros(t_max)
+    trials = np.zeros((n_trls_data, t_max))
+    for trl in prange(n_trls):
+
+        rand_nums = np.random.randn(1, t_max)
+        xt = drc + dr[trl] + (sigma * rand_nums)
+
+        # variable starting point
+        xt[0] += sp[trl]
+
+        # cumulate activation over time
+        xt = np.cumsum(xt)
+
+        for tp in range(len(xt)):
+            if np.abs(xt[tp]) >= bnds:
+                dat[0, trl] = tp + max(0, res_dist[trl])
+                dat[1, trl] = xt[tp] < 0.0
+                break
+
+        activation += xt
+        if trl < n_trls_data:
+            trials[trl, :] = xt
+
+    activation /= n_trls
+
+    return activation, trials, dat
 
 
 def _adjust_plt(xlim, ylim, xlabel, ylabel, label_fontsize, tick_fontsize):

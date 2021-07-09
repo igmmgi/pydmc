@@ -321,7 +321,10 @@ class DmcOb:
 
         plt.plot(cond_labels, self.summary["rt_cor"], **kwargs)
 
-        ylim = ylim or [np.min(self.summary["rt_cor"]) - 100, np.max(self.summary["rt_cor"]) + 100]
+        ylim = ylim or [
+            np.min(self.summary["rt_cor"]) - 100,
+            np.max(self.summary["rt_cor"]) + 100,
+        ]
 
         plt.margins(x=0.5)
         _adjust_plt(None, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
@@ -375,7 +378,10 @@ class DmcOb:
 
         plt.plot(cond_labels, self.summary["rt_err"], **kwargs)
 
-        ylim = ylim or [np.min(self.summary["rt_err"]) - 100, np.max(self.summary["rt_err"]) + 100]
+        ylim = ylim or [
+            np.min(self.summary["rt_err"]) - 100,
+            np.max(self.summary["rt_err"]) + 100,
+        ]
 
         plt.margins(x=0.5)
         _adjust_plt(None, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
@@ -417,7 +423,10 @@ class DmcOb:
             **kwargs,
         )
 
-        xlim = xlim or [np.min(self.delta.mean_bin) - 100, np.max(self.delta.mean_bin) + 100]
+        xlim = xlim or [
+            np.min(self.delta.mean_bin) - 100,
+            np.max(self.delta.mean_bin) + 100,
+        ]
         ylim = ylim or [0, 1.05]
 
         _adjust_plt(xlim, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
@@ -491,8 +500,14 @@ class DmcOb:
 
         plt.plot(self.delta["mean_bin"], self.delta["mean_effect"], **kwargs)
 
-        xlim = xlim or [np.min(self.delta.mean_bin) - 100, np.max(self.delta.mean_bin) + 100]
-        ylim = ylim or [np.min(self.delta.mean_effect) - 25, np.max(self.delta.mean_effect) + 25]
+        xlim = xlim or [
+            np.min(self.delta.mean_bin) - 100,
+            np.max(self.delta.mean_bin) + 100,
+        ]
+        ylim = ylim or [
+            np.min(self.delta.mean_effect) - 25,
+            np.max(self.delta.mean_effect) + 25,
+        ]
 
         plt.margins(x=0.5)
         _adjust_plt(xlim, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)

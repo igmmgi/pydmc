@@ -577,8 +577,14 @@ class DmcFit:
             **kwargs,
         )
 
-        xlim = xlim or [np.min(self.res_ob.delta.mean_bin) - 100, np.max(self.res_ob.delta.mean_bin) + 100]
-        ylim = ylim or [np.min(self.res_ob.delta.mean_effect) - 25, np.max(self.res_ob.delta.mean_effect) + 25]
+        xlim = xlim or [
+            np.min(self.res_ob.delta.mean_bin) - 100,
+            np.max(self.res_ob.delta.mean_bin) + 100,
+        ]
+        ylim = ylim or [
+            np.min(self.res_ob.delta.mean_effect) - 25,
+            np.max(self.res_ob.delta.mean_effect) + 25,
+        ]
         _adjust_plt(xlim, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
 
         if legend_position:
