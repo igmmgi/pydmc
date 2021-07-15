@@ -6,14 +6,14 @@ import matplotlib.pyplot as plt
 from scipy.stats.mstats import mquantiles
 
 
-def flanker_data_raw():
-    """Load Flanker data from Ulrich et al. (2015)."""
+def flanker_data():
+    """Load raw Flanker data from Ulrich et al. (2015)."""
     datafile = pkg_resources.resource_stream(__name__, "data/flankerData.csv")
     return pd.read_csv(datafile, sep="\t")
 
 
-def simon_data_raw():
-    """Load Simon task data from Ulrich et al. (2015)."""
+def simon_data():
+    """Load raw Simon task data from Ulrich et al. (2015)."""
     datafile = pkg_resources.resource_stream(__name__, "data/simonData.csv")
     return pd.read_csv(datafile, sep="\t")
 
@@ -24,6 +24,8 @@ class DmcOb:
         data,
         n_caf=5,
         n_delta=19,
+        p_delta=None,
+        t_delta=1,
         outlier=(200, 1200),
         columns=("Subject", "Comp", "RT", "Error"),
         comp_coding=("comp", "incomp"),
@@ -32,11 +34,25 @@ class DmcOb:
         skiprows=0,
     ):
         """
+
         Parameters
         ----------
+        data
+        n_caf
+        n_delta
+        p_delta
+        t_delta
+        outlier
+        columns
+        comp_coding
+        error_coding
+        sep
+        skiprows
         """
         self.n_caf = n_caf
         self.n_delta = n_delta
+        self.p_delta = p_delta
+        self.t_delta = t_delta
         self.outlier = outlier
         self.columns = columns
         self.comp_coding = comp_coding
@@ -62,6 +78,18 @@ class DmcOb:
 
     @staticmethod
     def read_data_files(data, sep="\t", skiprows=0):
+        """
+
+        Parameters
+        ----------
+        data
+        sep
+        skiprows
+
+        Returns
+        -------
+        pandas dataframe
+        """
         fn = glob.glob(data)
         datas = []
         for f in fn:
@@ -193,31 +221,49 @@ class DmcOb:
         """Calculate compatibility effect + delta values for correct trials."""
 
         def deltafun(x, n):
+            # filter trials
             x = x[(x.outlier == 0) & (x.Error == 0)].reset_index()
 
-            nbin = np.arange(1, n + 1)
-            mean_comp = mquantiles(
-                x["RT"][(x["Comp"] == "comp")],
-                np.linspace(0, 1, n + 2)[1:-1],
-                alphap=0.5,
-                betap=0.5,
-            )
+            if self.t_delta == 1:
 
-            mean_incomp = mquantiles(
-                x["RT"][(x["Comp"] == "incomp")],
-                np.linspace(0, 1, n + 2)[1:-1],
-                alphap=0.5,
-                betap=0.5,
-            )
-            mean_bin = (mean_comp + mean_incomp) / 2
-            mean_effect = mean_incomp - mean_comp
+                if self.p_delta is not None:
+                    percentiles = self.p_delta
+                else:
+                    percentiles = np.linspace(0, 1, self.n_delta + 2)[1:-1]
 
-            dat = np.array([nbin, mean_comp, mean_incomp, mean_bin, mean_effect]).T
+                mean_bins = np.array([mquantiles(
+                    x["RT"][(x["Comp"] == comp)],
+                    percentiles,
+                    alphap=0.5, betap=0.5,
+                ) for comp in ("comp", "incomp")])
+
+            elif self.t_delta == 2:
+
+                if self.p_delta is not None:
+                    percentiles = [0] + self.p_delta + [1]
+                else:
+                    percentiles = np.linspace(0, 1, self.n_delta + 1)
+
+                mean_bins = np.zeros((2, len(percentiles) - 1))
+                for idx, comp in enumerate(("comp", "incomp")):
+                    dat = x["RT"][(x["Comp"] == comp)]
+                    bin_values = mquantiles(
+                        dat,
+                        percentiles,
+                        alphap=0.5, betap=0.5,
+                    )
+                    tile = np.digitize(dat,  bin_values)
+                    mean_bins[idx, :] = np.array([dat[tile == i].mean() for i in range(1, len(bin_values))])
+
+            mean_bin = mean_bins.mean(axis=0)
+            mean_effect = mean_bins[1, :] - mean_bins[0, :]
+
+            dat = np.array([range(1, len(mean_bin) + 1), mean_bins[0, :], mean_bins[1, :], mean_bin, mean_effect]).T
 
             return pd.DataFrame(
-                dat,
-                columns=["bin", "mean_comp", "mean_incomp", "mean_bin", "mean_effect"],
-            )
+                    dat,
+                    columns=["bin", "mean_comp", "mean_incomp", "mean_bin", "mean_effect"],
+                )
 
         self.delta_subject = (
             self.data.groupby(["Subject"]).apply(deltafun, self.n_delta).reset_index()
@@ -243,7 +289,16 @@ class DmcOb:
     def plot(
         self, label_fontsize=12, tick_fontsize=10, hspace=0.5, wspace=0.5, **kwargs
     ):
-        """Plot."""
+        """Plot.
+
+        Parameters
+        ----------
+        label_fontsize
+        tick_fontsize
+        hspace
+        wspace
+        kwargs
+        """
 
         # upper left panel (rt correct)
         plt.subplot2grid((3, 2), (0, 0))
@@ -313,7 +368,19 @@ class DmcOb:
         tick_fontsize=10,
         **kwargs
     ):
-        """Plot correct RT's."""
+        """Plot correct RT's.
+
+        Parameters
+        ----------
+        show
+        ylim
+        xlabel
+        cond_labels
+        ylabel
+        label_fontsize
+        tick_fontsize
+        kwargs
+        """
 
         kwargs.setdefault("color", "black")
         kwargs.setdefault("marker", "o")
@@ -343,7 +410,19 @@ class DmcOb:
         tick_fontsize=10,
         **kwargs
     ):
-        """Plot error rate."""
+        """Plot error rate.
+
+        Parameters
+        ----------
+        show
+        ylim
+        xlabel
+        cond_labels
+        ylabel
+        label_fontsize
+        tick_fontsize
+        kwargs
+        """
 
         kwargs.setdefault("color", "black")
         kwargs.setdefault("marker", "o")
@@ -370,7 +449,19 @@ class DmcOb:
         tick_fontsize=10,
         **kwargs
     ):
-        """Plot error RT's."""
+        """Plot error RT's.
+
+        Parameters
+        ----------
+        show
+        ylim
+        xlabel
+        cond_labels
+        ylabel
+        label_fontsize
+        tick_fontsize
+        kwargs
+        """
 
         kwargs.setdefault("color", "black")
         kwargs.setdefault("marker", "o")
@@ -403,7 +494,22 @@ class DmcOb:
         colors=("green", "red"),
         **kwargs
     ):
-        """Plot CDF."""
+        """Plot CDF.
+
+        Parameters
+        ----------
+        show
+        xlim
+        ylim
+        xlabel
+        cond_labels
+        ylabel
+        label_fontsize
+        tick_fontsize
+        legend_position
+        colors
+        kwargs
+        """
 
         kwargs.setdefault("marker", "o")
         kwargs.setdefault("markersize", 4)
@@ -450,7 +556,21 @@ class DmcOb:
         colors=("green", "red"),
         **kwargs
     ):
-        """Plot CAF."""
+        """Plot CAF.
+
+        Parameters
+        ----------
+        show
+        ylim
+        xlabel
+        ylabel
+        label_fontsize
+        tick_fontsize
+        cond_labels
+        legend_position
+        colors
+        kwargs
+        """
 
         kwargs.setdefault("marker", "o")
         kwargs.setdefault("markersize", 4)
@@ -492,7 +612,19 @@ class DmcOb:
         ylim=None,
         **kwargs
     ):
-        """Plot reaction-time delta plots."""
+        """Plot reaction-time delta plots.
+
+        Parameters
+        ----------
+        show
+        xlabel
+        ylabel
+        label_fontsize
+        tick_fontsize
+        xlim
+        ylim
+        kwargs
+        """
 
         kwargs.setdefault("color", "black")
         kwargs.setdefault("marker", "o")

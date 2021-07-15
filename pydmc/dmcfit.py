@@ -1,7 +1,7 @@
+import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import fmin
-from pydmc.dmcsim import DmcSim
-import matplotlib.pyplot as plt
+from pydmc.dmcsim import DmcSim, DmcParameters
 
 
 class DmcFit:
@@ -14,12 +14,25 @@ class DmcFit:
         max_vals=None,
         fixed_fit=None,
         n_delta=19,
+        p_delta=None,
+        t_delta=1,
         n_caf=5,
         var_sp=True,
     ):
         """
         Parameters
         ----------
+        res_ob
+        n_trls
+        start_vals
+        min_vals
+        max_vals
+        fixed_fit
+        n_delta
+        p_delta
+        t_delta
+        n_caf
+        var_sp
         """
         self.res_ob = res_ob
         self.res_th = DmcSim
@@ -29,6 +42,8 @@ class DmcFit:
         self.max_vals = max_vals
         self.fixed_fit = fixed_fit
         self.n_delta = n_delta
+        self.p_delta = p_delta
+        self.t_delta = t_delta
         self.n_caf = n_caf
         self.var_sp = var_sp
         self.cost_value = np.Inf
@@ -144,6 +159,8 @@ class DmcFit:
             sp_lim=(-x[3], x[3]),
             n_trls=self.n_trls,
             n_delta=self.n_delta,
+            p_delta=self.p_delta,
+            t_delta=self.t_delta,
             n_caf=self.n_caf,
             res_dist=1,
         )
@@ -166,7 +183,13 @@ class DmcFit:
 
     @staticmethod
     def calculate_cost_value_rmse(res_th, res_ob):
-        """calculate_cost_value_rmse"""
+        """calculate_cost_value_rmse
+
+        Parameters
+        ----------
+        res_th
+        res_ob
+        """
         n_rt = len(res_th.delta) * 2
         n_err = len(res_th.caf)
 
@@ -195,7 +218,16 @@ class DmcFit:
     def plot(
         self, label_fontsize=12, tick_fontsize=10, hspace=0.5, wspace=0.5, **kwargs
     ):
-        """Plot."""
+        """ Plot.
+
+        Parameters
+        ----------
+        label_fontsize
+        tick_fontsize
+        hspace
+        wspace
+        kwargs
+        """
 
         # upper left panel (rt correct)
         plt.subplot2grid((3, 2), (0, 0))
@@ -269,7 +301,23 @@ class DmcFit:
         legend_position="upper left",
         **kwargs,
     ):
-        """Plot correct RT's."""
+        """Plot correct RT's.
+
+        Parameters
+        ----------
+        show
+        ylim
+        xlabel
+        ylabel
+        label_fontsize
+        tick_fontsize
+        cond_labels
+        colors
+        linestyles
+        legend_labels
+        legend_position
+        kwargs
+        """
 
         kwargs.setdefault("marker", "o")
         kwargs.setdefault("markersize", 4)
@@ -321,7 +369,23 @@ class DmcFit:
         legend_position="upper left",
         **kwargs,
     ):
-        """Plot error rate."""
+        """Plot error rate.
+
+        Parameters
+        ----------
+        show
+        ylim
+        xlabel
+        ylabel
+        label_fontsize
+        tick_fontsize
+        cond_labels
+        colors
+        linestyles
+        legend_labels
+        legend_position
+        kwargs
+        """
 
         kwargs.setdefault("marker", "o")
         kwargs.setdefault("markersize", 4)
@@ -370,7 +434,23 @@ class DmcFit:
         legend_position="upper left",
         **kwargs,
     ):
-        """Plot error RT's."""
+        """Plot error RT's.
+
+        Parameters
+        ----------
+        show
+        ylim
+        xlabel
+        ylabel
+        label_fontsize
+        tick_fontsize
+        cond_labels
+        colors
+        linestyles
+        legend_labels
+        legend_position
+        kwargs
+        """
 
         kwargs.setdefault("marker", "o")
         kwargs.setdefault("markersize", 4)
@@ -425,7 +505,21 @@ class DmcFit:
         colors=("green", "red"),
         **kwargs,
     ):
+        """
 
+        Parameters
+        ----------
+        show
+        xlim
+        xlabel
+        legend_labels
+        legend_position
+        ylabel
+        label_fontsize
+        tick_fontsize
+        colors
+        kwargs
+        """
         kwargs.setdefault("linestyle", "None")
         kwargs.setdefault("marker", "o")
         kwargs.setdefault("markersize", 4)
@@ -495,7 +589,21 @@ class DmcFit:
         colors=("green", "red"),
         **kwargs,
     ):
+        """
 
+        Parameters
+        ----------
+        show
+        ylim
+        xlabel
+        ylabel
+        label_fontsize
+        tick_fontsize
+        legend_labels
+        legend_position
+        colors
+        kwargs
+        """
         kwargs.setdefault("linestyle", "None")
         kwargs.setdefault("marker", "o")
         kwargs.setdefault("markersize", 4)
@@ -554,7 +662,21 @@ class DmcFit:
         legend_position="lower right",
         **kwargs,
     ):
-        """Plot reaction-time delta plots."""
+        """Plot reaction-time delta plots.
+
+        Parameters
+        ----------
+        show
+        xlim
+        ylim
+        xlabel
+        ylabel
+        label_fontsize
+        tick_fontsize
+        legend_labels
+        legend_position
+        kwargs
+        """
 
         kwargs.setdefault("color", "black")
         kwargs.setdefault("marker", "o")

@@ -1,5 +1,7 @@
 """ Basic unittests for DMC """
 import unittest
+from unittest import TestCase
+
 from pydmc.dmcsim import DmcSim
 
 

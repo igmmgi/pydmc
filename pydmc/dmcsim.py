@@ -7,83 +7,96 @@ Cognitive Psychology, 78, 148-174.
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from numba import jit, prange
+from dataclasses import dataclass
 from fastkde import fastKDE
+from numba import jit, prange
 from scipy.stats.mstats import mquantiles
+
+
+@dataclass
+class DmcParameters:
+    """
+    DMC Parameters
+    ----------
+    amp: int/float, optional
+        amplitude of automatic activation
+    tau: int/float, optional
+        time to peak automatic activation
+    aa_shape: int/float, optional
+        shape parameter of automatic activation
+    drc: int/float, optional
+        drift rate of controlled processes
+    sigma: int/float, optional
+        diffusion constant
+    bnds: int/float, optional
+        +- response barrier
+    res_dist: int, optional
+        non-decisional component distribution (1=normal, 2=uniform)
+    res_mean: int/float, optional
+        mean of non-decisional component
+    res_sd: int/float, optional
+        standard deviation of non-decisional component
+    t_max: int, optional
+        number of time points per trial
+    var_sp: bool, optional
+        variable starting point
+    sp_lim: tuple, optional
+        limiit range of distribution of starting point
+    sp_shape: int/float, optional
+        shape parameter of starting point distribution
+    var_dr: bool, optional
+        variable drift rate
+    dr_lim: tuple, optional
+        limit range of distribution of drift rate
+    dr_shape: int, optional
+        shape parameter of drift rate
+    """
+    amp: float = 20
+    tau: float = 30
+    aa_shape: float = 2
+    drc: float = 0.5
+    sigma: float = 4
+    bnds: float = 75
+    res_dist: int = 1
+    res_mean: float = 300
+    res_sd: float = 30
+    t_max: int = 1000
+    var_sp: bool = False
+    sp_lim: tuple = (-75, 75)
+    sp_shape: float = 3
+    var_dr: bool = False
+    dr_lim: tuple = (0.1, 0.7)
+    dr_shape: float = 3
 
 
 class DmcSim:
     """DMC Simulation."""
-
     def __init__(
         self,
-        amp=20,
-        tau=30,
-        aa_shape=2,
-        drc=0.5,
-        sigma=4,
-        bnds=75,
-        res_dist=1,
-        res_mean=300,
-        res_sd=30,
+        prms=DmcParameters(),
         n_trls=100000,
-        t_max=1000,
-        var_sp=False,
-        sp_lim=(-75, 75),
-        sp_shape=3,
-        var_dr=False,
-        dr_lim=(0.1, 0.7),
-        dr_shape=3,
         n_caf=5,
         n_delta=19,
+        p_delta=None,
+        t_delta=1,
         full_data=False,
         n_trls_data=5,
         run_simulation=True,
         plt_figs=False,
     ):
         """
-        Parameters
-        ----------
-        amp: int/float, optional
-            amplitude of automatic activation
-        tau: int/float, optional
-            time to peak automatic activation
-        aa_shape: int, optional
-            shape parameter of automatic activation
-        drc: int/float, optional
-            drift rate of controlled processes
-        sigma: int, optional
-            diffusion constant
-        bnds: int, optional
-            +- response barrier
-        res_dist: int, optional
-            non-decisional component distribution (1=normal, 2=uniform)
-        res_mean: int/float, optional
-            mean of non-decisional component
-        res_sd: int/float, optional
-            standard deviation of non-decisional component
         n_trls: int (1000 to 100000 (default)), optional
             number of trials
-        t_max: int, optional
-            number of time points per trial
-        var_sp: bool, optional
-            variable starting point
-        sp_lim: tuple, optional
-            limiit range of distribution of starting point
-        sp_shape: int, optional
-            shape parameter of starting point distribution
-        var_dr: bool, optional
-            variable drift rate
-        dr_lim: tuple, optional
-            limit range of distribution of drift rate
-        dr_shape: int, optional
-            shape parameter of drift rate
-        plt_figs: bool, optional
+       plt_figs: bool, optional
             plot figures
         n_caf: range, optional
             caf bins
         n_delta: range, optional
             delta reaction time bins
+        p_delta: array, optional
+            delta percentiles
+        t_delta: int, optional
+            type of delta calculation (1 = percentile, 2 = percentil bin average)
         full_data: bool, optional
             run simulation to t_max to caluculate activation
         n_trls_data: int, optional
@@ -103,56 +116,38 @@ class DmcSim:
 
         Examples
         --------
-        >>> from pydmc.dmcsim import DmcSim
+        >>> from pydmc.dmcsim import DmcSim, DmcParameters
         >>> dmc_sim = DmcSim(full_data=True)
         >>> dmc_sim.plot()                 # Fig 3
         >>> dmc_sim = DmcSim()
         >>> dmc_sim.plot()                 # Fig 3 (part)
-        >>> dmc_sim = DmcSim(tau = 150)
+        >>> dmc_sim = DmcSim(DmcParameters(tau = 150))
         >>> dmc_sim.plot()                 # Fig 4
-        >>> dmc_sim = DmcSim(tau = 90)
+        >>> dmc_sim = DmcSim(DmcParameters(tau = 90))
         >>> dmc_sim.plot()                 # Fig 5
-        >>> dmc_sim = DmcSim(var_sp = True)
+        >>> dmc_sim = DmcSim(DmcParameters(var_sp = True))
         >>> dmc_sim.plot()                 # Fig 6
-        >>> dmc_sim = DmcSim(var_dr = True)
+        >>> dmc_sim = DmcSim(DmcParameters(var_dr = True))
         >>> dmc_sim.plot()                 # Fig 7
         """
 
-        self.amp = amp
-        self.tau = tau
-        self.aa_shape = aa_shape
-        self.drc = drc
-        self.sigma = sigma
-        self.bnds = bnds
-        self.res_dist = res_dist
-        self.res_mean = res_mean
-        self.res_sd = res_sd
+        self.prms = prms
         self.n_trls = n_trls
-        self.t_max = t_max
-        self.var_dr = var_dr
-        self.dr_lim = dr_lim
-        self.dr_shape = dr_shape
-        self.var_sp = var_sp
-        self.sp_lim = sp_lim
-        self.sp_shape = sp_shape
         self.n_caf = n_caf
         self.n_delta = n_delta
+        self.p_delta = p_delta
+        self.t_delta = t_delta
         self.full_data = full_data
         self.n_trls_data = n_trls_data
 
-        self.tim = np.arange(1, self.t_max + 1, 1)
-        self.eq4 = (
-            self.amp
-            * np.exp(-self.tim / self.tau)
-            * (np.exp(1) * self.tim / (self.aa_shape - 1) / self.tau)
-            ** (self.aa_shape - 1)
-        )
-        self.dat = []
-        self.dat_trials = []
-        self.xt = []
-        self.summary = []
-        self.caf = []
-        self.delta = []
+        self.tim = None
+        self.eq4 = None
+        self.dat = None
+        self.dat_trials = None
+        self.xt = None
+        self.summary = None
+        self.caf = None
+        self.delta = None
 
         if run_simulation:
             self.run_simulation()
@@ -163,6 +158,13 @@ class DmcSim:
     def run_simulation(self):
         """Run simulation."""
 
+        self.tim = np.arange(1, self.prms.t_max + 1, 1)
+        self.eq4 = (
+            self.prms.amp
+            * np.exp(-self.tim / self.prms.tau)
+            * (np.exp(1) * self.tim / (self.prms.aa_shape - 1) / self.prms.tau)
+            ** (self.prms.aa_shape - 1)
+        )
         if self.full_data:
             self._run_simulation_full()
         else:
@@ -175,22 +177,23 @@ class DmcSim:
     def _run_simulation(self):
         """Run simulation using numba."""
 
-        for comp in [1, -1]:
-            dr = self._dr()
-            sp = self._sp()
-            drc = comp * self.eq4 * ((self.aa_shape - 1) / self.tim - 1 / self.tau)
+        self.dat = []
+        for comp in (1, -1):
+
+            dr, sp = self._dr(),  self._sp()
+            drc = comp * self.eq4 * ((self.prms.aa_shape - 1) / self.tim - 1 / self.prms.tau)
 
             self.dat.append(
                 _run_simulation(
                     drc,
                     sp,
                     dr,
-                    self.t_max,
-                    self.sigma,
-                    self.res_dist,
-                    self.res_mean,
-                    self.res_sd,
-                    self.bnds,
+                    self.prms.t_max,
+                    self.prms.sigma,
+                    self.prms.res_dist,
+                    self.prms.res_mean,
+                    self.prms.res_sd,
+                    self.prms.bnds,
                     self.n_trls,
                 )
             )
@@ -198,21 +201,24 @@ class DmcSim:
     def _run_simulation_full(self):
         """Run simulation using numba."""
 
-        for comp in [1, -1]:
-            dr = self._dr()
-            sp = self._sp()
-            drc = comp * self.eq4 * ((self.aa_shape - 1) / self.tim - 1 / self.tau)
+        self.xt = []
+        self.dat_trials = []
+        self.dat = []
+        for comp in (1, -1):
+
+            dr, sp = self._dr(), self._sp()
+            drc = comp * self.eq4 * ((self.prms.aa_shape - 1) / self.tim - 1 / self.prms.tau)
 
             activation, trials, dat = _run_simulation_full(
                 drc,
                 sp,
                 dr,
-                self.t_max,
-                self.sigma,
-                self.res_dist,
-                self.res_mean,
-                self.res_sd,
-                self.bnds,
+                self.prms.t_max,
+                self.prms.sigma,
+                self.prms.res_dist,
+                self.prms.res_mean,
+                self.prms.res_sd,
+                self.prms.bnds,
                 self.n_trls,
                 self.n_trls_data,
             )
@@ -269,26 +275,42 @@ class DmcSim:
     def _calc_delta_values(self):
         """Calculate compatibility effect + delta values for correct trials."""
 
-        nbin = np.arange(1, self.n_delta + 1)
+        if self.t_delta == 1:
 
-        # alphap, betap values to match R quantile 5 (see scipy.stats.mstats.mquantiles)
-        mean_comp = mquantiles(
-            self.dat[0][0],
-            np.linspace(0, 1, self.n_delta + 2)[1:-1],
-            alphap=0.5,
-            betap=0.5,
-        )
-        mean_incomp = mquantiles(
-            self.dat[1][0],
-            np.linspace(0, 1, self.n_delta + 2)[1:-1],
-            alphap=0.5,
-            betap=0.5,
-        )
+            if self.p_delta is not None:
+                percentiles = self.p_delta
+            else:
+                percentiles = np.linspace(0, 1, self.n_delta + 2)[1:-1]
 
-        mean_bin = (mean_comp + mean_incomp) / 2
-        mean_effect = mean_incomp - mean_comp
+            # alphap, betap values to match R quantile 5 (see scipy.stats.mstats.mquantiles)
+            mean_bins = np.array([mquantiles(
+                self.dat[comp][0],
+                percentiles,
+                alphap=0.5, betap=0.5,
+            ) for comp in (0, 1)])
 
-        dat = np.array([nbin, mean_comp, mean_incomp, mean_bin, mean_effect]).T
+        elif self.t_delta == 2:
+
+            if self.p_delta is not None:
+                percentiles = [0] + self.p_delta + [1]
+            else:
+                percentiles = np.linspace(0, 1, self.n_delta + 1)
+
+            mean_bins = np.zeros((2, len(percentiles)-1))
+            for comp in (0, 1):
+                bin_values = mquantiles(
+                    self.dat[comp][0],
+                    percentiles,
+                    alphap=0.5, betap=0.5,
+                )
+
+                tile = np.digitize(self.dat[comp][0], bin_values)
+                mean_bins[comp, :] = np.array([self.dat[comp][0][tile == i].mean() for i in range(1, len(bin_values))])
+
+        mean_bin = mean_bins.mean(axis=0)
+        mean_effect = mean_bins[1, :] - mean_bins[0, :]
+
+        dat = np.array([range(1, len(mean_bin)+1), mean_bins[0, :], mean_bins[1, :], mean_bin, mean_effect]).T
 
         self.delta = pd.DataFrame(
             dat, columns=["bin", "mean_comp", "mean_incomp", "mean_bin", "mean_effect"]
@@ -311,10 +333,19 @@ class DmcSim:
         wspace=0.5,
         **kwargs
     ):
-        """Plot"""
+        """Plot
+
+        Parameters
+        ----------
+        fig_type
+        label_fontsize
+        tick_fontsize
+        hspace
+        wspace
+        kwargs
+        """
         if fig_type == "summary1" and not self.full_data:
             fig_type = "summary2"
-
         if fig_type == "summary1":
             self._plot_summary1(label_fontsize, tick_fontsize, hspace, wspace, **kwargs)
         elif fig_type == "summary2":
@@ -468,7 +499,22 @@ class DmcSim:
         colors=("green", "red"),
         **kwargs
     ):
-        """Plot activation."""
+        """Plot activation.
+
+        Parameters
+        ----------
+        show
+        xlim
+        ylim
+        xlabel
+        ylabel
+        label_fontsize
+        tick_fontsize
+        cond_labels
+        legend_position
+        colors
+        kwargs
+        """
 
         if not self.xt:
             print("Plotting activation function requires full_data=True")
@@ -478,10 +524,10 @@ class DmcSim:
         plt.plot(self.eq4 * -1, "k--")
         plt.plot(self.xt[0], color=colors[0], label=cond_labels[0], **kwargs)
         plt.plot(self.xt[1], color=colors[1], label=cond_labels[1], **kwargs)
-        plt.plot(np.cumsum(np.repeat(self.drc, self.t_max)), color="black", **kwargs)
+        plt.plot(np.cumsum(np.repeat(self.prms.drc, self.prms.t_max)), color="black", **kwargs)
 
-        xlim = xlim or [0, self.t_max]
-        ylim = ylim or [-self.bnds - 20, self.bnds + 20]
+        xlim = xlim or [0, self.prms.t_max]
+        ylim = ylim or [-self.prms.bnds - 20, self.prms.bnds + 20]
         self._plot_bounds()
         _adjust_plt(xlim, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
 
@@ -505,7 +551,22 @@ class DmcSim:
         colors=("green", "red"),
         **kwargs
     ):
-        """Plot individual trials."""
+        """Plot individual trials.
+
+        Parameters
+        ----------
+        show
+        xlim
+        ylim
+        xlabel
+        ylabel
+        label_fontsize
+        tick_fontsize
+        cond_labels
+        legend_position
+        colors
+        kwargs
+        """
 
         if not self.xt:
             print("Plotting individual trials function requires full_data=True")
@@ -516,14 +577,14 @@ class DmcSim:
                 labels = cond_labels
             else:
                 labels = [None, None]
-            idx = np.where(np.abs(self.dat_trials[0][trl, :]) >= self.bnds)[0][0]
+            idx = np.where(np.abs(self.dat_trials[0][trl, :]) >= self.prms.bnds)[0][0]
             plt.plot(
                 self.dat_trials[0][trl][0:idx],
                 color=colors[0],
                 label=labels[0],
                 **kwargs,
             )
-            idx = np.where(np.abs(self.dat_trials[1][trl, :]) >= self.bnds)[0][0]
+            idx = np.where(np.abs(self.dat_trials[1][trl, :]) >= self.prms.bnds)[0][0]
             plt.plot(
                 self.dat_trials[1][trl][0:idx],
                 color=colors[1],
@@ -531,8 +592,8 @@ class DmcSim:
                 **kwargs,
             )
 
-        xlim = xlim or [0, self.t_max]
-        ylim = ylim or [-self.bnds - 20, self.bnds + 20]
+        xlim = xlim or [0, self.prms.t_max]
+        ylim = ylim or [-self.prms.bnds - 20, self.prms.bnds + 20]
         self._plot_bounds()
         _adjust_plt(xlim, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
 
@@ -543,8 +604,8 @@ class DmcSim:
             plt.show(block=False)
 
     def _plot_bounds(self):
-        plt.axhline(y=self.bnds, color="black", linestyle="--")
-        plt.axhline(y=-self.bnds, color="black", linestyle="--")
+        plt.axhline(y=self.prms.bnds, color="black", linestyle="--")
+        plt.axhline(y=-self.prms.bnds, color="black", linestyle="--")
 
     def plot_pdf(
         self,
@@ -560,7 +621,22 @@ class DmcSim:
         colors=("green", "red"),
         **kwargs
     ):
-        """Plot PDF."""
+        """Plot PDF.
+
+        Parameters
+        ----------
+        show
+        xlim
+        ylim
+        xlabel
+        ylabel
+        label_fontsize
+        tick_fontsize
+        cond_labels
+        legend_position
+        colors
+        kwargs
+        """
 
         comp_pdf, axes1 = fastKDE.pdf(self.dat[0][0])
         incomp_pdf, axes2 = fastKDE.pdf(self.dat[1][0])
@@ -568,7 +644,7 @@ class DmcSim:
         plt.plot(axes1, comp_pdf, color=colors[0], label=cond_labels[0], **kwargs)
         plt.plot(axes2, incomp_pdf, color=colors[1], label=cond_labels[1], **kwargs)
 
-        xlim = xlim or [0, self.t_max]
+        xlim = xlim or [0, self.prms.t_max]
         ylim = ylim or [0, 0.01]
         _adjust_plt(xlim, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
 
@@ -592,7 +668,22 @@ class DmcSim:
         colors=("green", "red"),
         **kwargs
     ):
-        """Plot CDF."""
+        """Plot CDF.
+
+        Parameters
+        ----------
+        show
+        xlim
+        ylim
+        xlabel
+        ylabel
+        label_fontsize
+        tick_fontsize
+        cond_labels
+        legend_position
+        colors
+        kwargs
+        """
 
         comp_pdf, axes1 = fastKDE.pdf(self.dat[0][0])
         incomp_pdf, axes2 = fastKDE.pdf(self.dat[1][0])
@@ -612,7 +703,7 @@ class DmcSim:
             **kwargs,
         )
 
-        xlim = xlim or [0, self.t_max]
+        xlim = xlim or [0, self.prms.t_max]
         _adjust_plt(xlim, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
 
         if legend_position is not None:
@@ -634,7 +725,21 @@ class DmcSim:
         colors=("green", "red"),
         **kwargs
     ):
-        """Plot CAF."""
+        """Plot CAF.
+
+        Parameters
+        ----------
+        show
+        ylim
+        xlabel
+        ylabel
+        label_fontsize
+        tick_fontsize
+        cond_labels
+        legend_position
+        colors
+        kwargs
+        """
 
         kwargs.setdefault("marker", "o")
         kwargs.setdefault("markersize", 4)
@@ -675,7 +780,19 @@ class DmcSim:
         tick_fontsize=10,
         **kwargs
     ):
-        """Plot reaction-time delta plots."""
+        """Plot reaction-time delta plots.
+
+        Parameters
+        ----------
+        show
+        xlim
+        ylim
+        xlabel
+        ylabel
+        label_fontsize
+        tick_fontsize
+        kwargs
+        """
 
         kwargs.setdefault("color", "black")
         kwargs.setdefault("marker", "o")
@@ -697,14 +814,14 @@ class DmcSim:
             plt.show(block=False)
 
     def _dr(self):
-        if self.var_dr:
-            return self.rand_beta(self.dr_lim, self.dr_shape, self.n_trls)
-        return np.ones(self.n_trls) * self.drc
+        if self.prms.var_dr:
+            return self.rand_beta(self.prms.dr_lim, self.prms.dr_shape, self.n_trls)
+        return np.ones(self.n_trls) * self.prms.drc
 
     def _sp(self):
-        if self.var_sp:
+        if self.prms.var_sp:
             return self.rand_beta(
-                (self.sp_lim[0], self.sp_lim[1]), self.sp_shape, self.n_trls
+                (self.prms.sp_lim[0], self.prms.sp_lim[1]), self.prms.sp_shape, self.n_trls
             )
         return np.zeros(self.n_trls)
 
@@ -719,7 +836,19 @@ class DmcSim:
         cond_labels=("Compatible", "Incompatible"),
         **kwargs
     ):
-        """Plot correct RT's."""
+        """Plot correct RT's.
+
+        Parameters
+        ----------
+        show
+        ylim
+        xlabel
+        ylabel
+        label_fontsize
+        tick_fontsize
+        cond_labels
+        kwargs
+        """
 
         kwargs.setdefault("color", "black")
         kwargs.setdefault("marker", "o")
@@ -750,7 +879,19 @@ class DmcSim:
         cond_labels=("Compatible", "Incompatible"),
         **kwargs
     ):
-        """Plot error rate"""
+        """Plot error rate
+
+        Parameters
+        ----------
+        show
+        ylim
+        xlabel
+        ylabel
+        label_fontsize
+        tick_fontsize
+        cond_labels
+        kwargs
+        """
 
         kwargs.setdefault("color", "black")
         kwargs.setdefault("marker", "o")
@@ -777,7 +918,19 @@ class DmcSim:
         cond_labels=("Compatible", "Incompatible"),
         **kwargs
     ):
-        """Plot error RT's."""
+        """Plot error RT's.
+
+        Parameters
+        ----------
+        show
+        ylim
+        xlabel
+        ylabel
+        label_fontsize
+        tick_fontsize
+        cond_labels
+        kwargs
+        """
 
         kwargs.setdefault("color", "black")
         kwargs.setdefault("marker", "o")
