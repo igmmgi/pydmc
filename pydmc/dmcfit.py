@@ -117,7 +117,9 @@ class DmcFit:
                 self.min_vals[key] = self.start_vals[key]
                 self.max_vals[key] = self.start_vals[key]
 
+
     def fit_data(self, **kwargs):
+        self.res_th = DmcSim(DmcParameters(**self.start_vals))
         self.fit = fmin(
             self._function_to_minimise,
             np.array(list(self.start_vals.values())),
@@ -145,26 +147,19 @@ class DmcFit:
         x = np.maximum(x, list(self.min_vals.values()))
         x = np.minimum(x, list(self.max_vals.values()))
 
-        self.res_th = DmcSim(
-            amp=x[0],
-            tau=x[1],
-            drc=x[2],
-            bnds=x[3],
-            res_mean=x[4],
-            res_sd=x[5],
-            aa_shape=x[6],
-            sp_shape=x[7],
-            sigma=x[8],
-            var_sp=True,
-            sp_lim=(-x[3], x[3]),
-            n_trls=self.n_trls,
-            n_delta=self.n_delta,
-            p_delta=self.p_delta,
-            t_delta=self.t_delta,
-            n_caf=self.n_caf,
-            res_dist=1,
-        )
+        self.res_th.prms.amp = x[0]
+        self.res_th.prms.tau = x[1]
+        self.res_th.prms.drc = x[2]
+        self.res_th.prms.bnds = x[3]
+        self.res_th.prms.res_mean = x[4]
+        self.res_th.prms.res_sd = x[5]
+        self.res_th.prms.aa_shape = x[6]
+        self.res_th.prms.sp_shape = x[7]
+        self.res_th.prms.sigma = x[8]
+        self.res_th.prms.var_sp = True
+        self.res_th.prms.sp_lim = (-x[3], x[3])
 
+        self.res_th.run_simulation()
         self.cost_value = DmcFit.calculate_cost_value_rmse(self.res_th, self.res_ob)
 
         print(
