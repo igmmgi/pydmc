@@ -367,43 +367,43 @@ class DmcSim:
 
     def plot(self, **kwargs):
         """Plot."""
-        DmcPlot(self, **kwargs).plot()
+        DmcPlot(self).plot(**kwargs)
 
     def plot_activation(self, **kwargs):
         """Plot activation."""
-        DmcPlot(self, **kwargs).plot_activation()
+        DmcPlot(self).plot_activation(**kwargs)
 
     def plot_trials(self, **kwargs):
         """Plot trials."""
-        DmcPlot(self, **kwargs).plot_trials()
+        DmcPlot(self).plot_trials(**kwargs)
 
     def plot_pdf(self, **kwargs):
         """Plot pdf."""
-        DmcPlot(self, **kwargs).plot_pdf()
+        DmcPlot(self).plot_pdf(**kwargs)
 
     def plot_cdf(self, **kwargs):
         """Plot cdf."""
-        DmcPlot(self, **kwargs).plot_cdf()
+        DmcPlot(self).plot_cdf(**kwargs)
 
     def plot_caf(self, **kwargs):
         """Plot caf."""
-        DmcPlot(self, **kwargs).plot_caf()
+        DmcPlot(self).plot_caf(**kwargs)
 
     def plot_delta(self, **kwargs):
         """Plot delta."""
-        DmcPlot(self, **kwargs).plot_delta()
+        DmcPlot(self).plot_delta(**kwargs)
 
     def plot_rt_correct(self, **kwargs):
         """Plot rt correct."""
-        DmcPlot(self, **kwargs).plot_rt_correct()
+        DmcPlot(self).plot_rt_correct(**kwargs)
 
     def plot_er(self, **kwargs):
         """Plot er."""
-        DmcPlot(self, **kwargs).plot_er()
+        DmcPlot(self).plot_er(**kwargs)
 
     def plot_rt_error(self, **kwargs):
         """Plot rt error."""
-        DmcPlot(self, **kwargs).plot_rt_error()
+        DmcPlot(self).plot_rt_error(**kwargs)
 
 
 @jit(nopython=True, parallel=True)

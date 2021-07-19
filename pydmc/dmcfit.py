@@ -97,7 +97,6 @@ class DmcFit:
                 self.min_vals[key] = self.start_vals[key]
                 self.max_vals[key] = self.start_vals[key]
 
-
     def fit_data(self, **kwargs):
         self.res_th = DmcSim(DmcParameters(**self.start_vals))
         self.fit = fmin(
