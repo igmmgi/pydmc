@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.stats.mstats import mquantiles
+from pydmc.dmcplot import DmcPlot
 
 
 def flanker_data():
@@ -231,11 +232,17 @@ class DmcOb:
                 else:
                     percentiles = np.linspace(0, 1, self.n_delta + 2)[1:-1]
 
-                mean_bins = np.array([mquantiles(
-                    x["RT"][(x["Comp"] == comp)],
-                    percentiles,
-                    alphap=0.5, betap=0.5,
-                ) for comp in ("comp", "incomp")])
+                mean_bins = np.array(
+                    [
+                        mquantiles(
+                            x["RT"][(x["Comp"] == comp)],
+                            percentiles,
+                            alphap=0.5,
+                            betap=0.5,
+                        )
+                        for comp in ("comp", "incomp")
+                    ]
+                )
 
             elif self.t_delta == 2:
 
@@ -250,20 +257,31 @@ class DmcOb:
                     bin_values = mquantiles(
                         dat,
                         percentiles,
-                        alphap=0.5, betap=0.5,
+                        alphap=0.5,
+                        betap=0.5,
                     )
-                    tile = np.digitize(dat,  bin_values)
-                    mean_bins[idx, :] = np.array([dat[tile == i].mean() for i in range(1, len(bin_values))])
+                    tile = np.digitize(dat, bin_values)
+                    mean_bins[idx, :] = np.array(
+                        [dat[tile == i].mean() for i in range(1, len(bin_values))]
+                    )
 
             mean_bin = mean_bins.mean(axis=0)
             mean_effect = mean_bins[1, :] - mean_bins[0, :]
 
-            dat = np.array([range(1, len(mean_bin) + 1), mean_bins[0, :], mean_bins[1, :], mean_bin, mean_effect]).T
+            dat = np.array(
+                [
+                    range(1, len(mean_bin) + 1),
+                    mean_bins[0, :],
+                    mean_bins[1, :],
+                    mean_bin,
+                    mean_effect,
+                ]
+            ).T
 
             return pd.DataFrame(
-                    dat,
-                    columns=["bin", "mean_comp", "mean_incomp", "mean_bin", "mean_effect"],
-                )
+                dat,
+                columns=["bin", "mean_comp", "mean_incomp", "mean_bin", "mean_effect"],
+            )
 
         self.delta_subject = (
             self.data.groupby(["Subject"]).apply(deltafun, self.n_delta).reset_index()
@@ -286,373 +304,30 @@ class DmcOb:
             self.delta_subject.groupby(["bin"]).apply(aggfun).reset_index()
         ).drop("level_1", axis=1)
 
-    def plot(
-        self, label_fontsize=12, tick_fontsize=10, hspace=0.5, wspace=0.5, **kwargs
-    ):
-        """Plot.
+    def plot(self, **kwargs):
+        """Plot."""
+        DmcPlot(res_th=self, **kwargs).plot()
 
-        Parameters
-        ----------
-        label_fontsize
-        tick_fontsize
-        hspace
-        wspace
-        kwargs
-        """
+    def plot(self, **kwargs):
+        """Plot."""
+        DmcPlot(res_th=self, **kwargs).plot_rt_correct()
 
-        # upper left panel (rt correct)
-        plt.subplot2grid((3, 2), (0, 0))
-        self.plot_rt_correct(
-            show=False,
-            label_fontsize=label_fontsize,
-            tick_fontsize=tick_fontsize,
-            **kwargs,
-        )
+    def plot(self, **kwargs):
+        """Plot."""
+        DmcPlot(res_th=self, **kwargs).plot_er()
 
-        # middle left pannel
-        plt.subplot2grid((3, 2), (1, 0))
-        self.plot_er(
-            show=False,
-            label_fontsize=label_fontsize,
-            tick_fontsize=tick_fontsize,
-            **kwargs,
-        )
+    def plot(self, **kwargs):
+        """Plot."""
+        DmcPlot(res_th=self, **kwargs).plot_rt_error()
 
-        # bottom left pannel
-        plt.subplot2grid((3, 2), (2, 0))
-        self.plot_rt_error(
-            show=False,
-            label_fontsize=label_fontsize,
-            tick_fontsize=tick_fontsize,
-            **kwargs,
-        )
+    def plot(self, **kwargs):
+        """Plot."""
+        DmcPlot(res_th=self, **kwargs).plot_cdf()
 
-        # upper right panel (cdf)
-        plt.subplot2grid((3, 2), (0, 1))
-        self.plot_cdf(
-            show=False,
-            label_fontsize=label_fontsize,
-            tick_fontsize=tick_fontsize,
-            **kwargs,
-        )
+    def plot(self, **kwargs):
+        """Plot."""
+        DmcPlot(res_th=self, **kwargs).plot_caf()
 
-        # middle right (left) panel (PDF)
-        plt.subplot2grid((3, 2), (1, 1))
-        self.plot_caf(
-            show=False,
-            label_fontsize=label_fontsize,
-            tick_fontsize=tick_fontsize,
-            **kwargs,
-        )
-
-        # lower right (right) panel (CDF)
-        plt.subplot2grid((3, 2), (2, 1))
-        self.plot_delta(
-            show=False,
-            label_fontsize=label_fontsize,
-            tick_fontsize=tick_fontsize,
-            **kwargs,
-        )
-
-        plt.subplots_adjust(hspace=hspace, wspace=wspace)
-        plt.show(block=False)
-
-    def plot_rt_correct(
-        self,
-        show=True,
-        ylim=None,
-        xlabel=None,
-        cond_labels=("Compatible", "Incompatible"),
-        ylabel="RT Correct [ms]",
-        label_fontsize=12,
-        tick_fontsize=10,
-        **kwargs
-    ):
-        """Plot correct RT's.
-
-        Parameters
-        ----------
-        show
-        ylim
-        xlabel
-        cond_labels
-        ylabel
-        label_fontsize
-        tick_fontsize
-        kwargs
-        """
-
-        kwargs.setdefault("color", "black")
-        kwargs.setdefault("marker", "o")
-        kwargs.setdefault("markersize", 4)
-
-        plt.plot(cond_labels, self.summary["rt_cor"], **kwargs)
-
-        ylim = ylim or [
-            np.min(self.summary["rt_cor"]) - 100,
-            np.max(self.summary["rt_cor"]) + 100,
-        ]
-
-        plt.margins(x=0.5)
-        _adjust_plt(None, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
-
-        if show:
-            plt.show(block=False)
-
-    def plot_er(
-        self,
-        show=True,
-        ylim=None,
-        xlabel=None,
-        cond_labels=("Compatible", "Incompatible"),
-        ylabel="Error Rate [%]",
-        label_fontsize=12,
-        tick_fontsize=10,
-        **kwargs
-    ):
-        """Plot error rate.
-
-        Parameters
-        ----------
-        show
-        ylim
-        xlabel
-        cond_labels
-        ylabel
-        label_fontsize
-        tick_fontsize
-        kwargs
-        """
-
-        kwargs.setdefault("color", "black")
-        kwargs.setdefault("marker", "o")
-        kwargs.setdefault("markersize", 4)
-
-        plt.plot(cond_labels, self.summary["per_err"], **kwargs)
-
-        ylim = ylim or [0, np.max(self.summary["per_err"]) + 5]
-
-        plt.margins(x=0.5)
-        _adjust_plt(None, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
-
-        if show:
-            plt.show(block=False)
-
-    def plot_rt_error(
-        self,
-        show=True,
-        ylim=None,
-        xlabel=None,
-        cond_labels=("Compatible", "Incompatible"),
-        ylabel="RT Error [ms]",
-        label_fontsize=12,
-        tick_fontsize=10,
-        **kwargs
-    ):
-        """Plot error RT's.
-
-        Parameters
-        ----------
-        show
-        ylim
-        xlabel
-        cond_labels
-        ylabel
-        label_fontsize
-        tick_fontsize
-        kwargs
-        """
-
-        kwargs.setdefault("color", "black")
-        kwargs.setdefault("marker", "o")
-        kwargs.setdefault("markersize", 4)
-
-        plt.plot(cond_labels, self.summary["rt_err"], **kwargs)
-
-        ylim = ylim or [
-            np.min(self.summary["rt_err"]) - 100,
-            np.max(self.summary["rt_err"]) + 100,
-        ]
-
-        plt.margins(x=0.5)
-        _adjust_plt(None, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
-
-        if show:
-            plt.show(block=False)
-
-    def plot_cdf(
-        self,
-        show=True,
-        xlim=None,
-        ylim=(0, 1.05),
-        xlabel=None,
-        cond_labels=("Compatible", "Incompatible"),
-        ylabel="CDF",
-        label_fontsize=12,
-        tick_fontsize=10,
-        legend_position="lower right",
-        colors=("green", "red"),
-        **kwargs
-    ):
-        """Plot CDF.
-
-        Parameters
-        ----------
-        show
-        xlim
-        ylim
-        xlabel
-        cond_labels
-        ylabel
-        label_fontsize
-        tick_fontsize
-        legend_position
-        colors
-        kwargs
-        """
-
-        kwargs.setdefault("marker", "o")
-        kwargs.setdefault("markersize", 4)
-
-        plt.plot(
-            self.delta["mean_comp"],
-            np.linspace(0, 1, self.n_delta + 2)[1:-1],
-            color=colors[0],
-            label=cond_labels[0],
-            **kwargs,
-        )
-        plt.plot(
-            self.delta["mean_incomp"],
-            np.linspace(0, 1, self.n_delta + 2)[1:-1],
-            color=colors[1],
-            label=cond_labels[1],
-            **kwargs,
-        )
-
-        xlim = xlim or [
-            np.min(self.delta.mean_bin) - 100,
-            np.max(self.delta.mean_bin) + 100,
-        ]
-        ylim = ylim or [0, 1.05]
-
-        _adjust_plt(xlim, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
-
-        if legend_position:
-            plt.legend(loc=legend_position)
-
-        if show:
-            plt.show(block=False)
-
-    def plot_caf(
-        self,
-        show=True,
-        ylim=(0, 1.1),
-        xlabel="RT Bin",
-        ylabel="CAF",
-        label_fontsize=12,
-        tick_fontsize=10,
-        cond_labels=("Compatible", "Incompatible"),
-        legend_position="lower right",
-        colors=("green", "red"),
-        **kwargs
-    ):
-        """Plot CAF.
-
-        Parameters
-        ----------
-        show
-        ylim
-        xlabel
-        ylabel
-        label_fontsize
-        tick_fontsize
-        cond_labels
-        legend_position
-        colors
-        kwargs
-        """
-
-        kwargs.setdefault("marker", "o")
-        kwargs.setdefault("markersize", 4)
-
-        plt.plot(
-            self.caf["bin"][self.caf["Comp"] == "comp"],
-            self.caf["Error"][self.caf["Comp"] == "comp"],
-            color=colors[0],
-            label=cond_labels[0],
-            **kwargs,
-        )
-
-        plt.plot(
-            self.caf["bin"][self.caf["Comp"] == "incomp"],
-            self.caf["Error"][self.caf["Comp"] == "incomp"],
-            color=colors[1],
-            label=cond_labels[1],
-            **kwargs,
-        )
-
-        plt.xticks(range(1, self.n_caf + 1), [str(x) for x in range(1, self.n_caf + 1)])
-
-        _adjust_plt(None, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
-
-        if legend_position:
-            plt.legend(loc=legend_position)
-
-        if show:
-            plt.show(block=False)
-
-    def plot_delta(
-        self,
-        show=True,
-        xlabel="Time (ms)",
-        ylabel=r"$\Delta$",
-        label_fontsize=12,
-        tick_fontsize=10,
-        xlim=None,
-        ylim=None,
-        **kwargs
-    ):
-        """Plot reaction-time delta plots.
-
-        Parameters
-        ----------
-        show
-        xlabel
-        ylabel
-        label_fontsize
-        tick_fontsize
-        xlim
-        ylim
-        kwargs
-        """
-
-        kwargs.setdefault("color", "black")
-        kwargs.setdefault("marker", "o")
-        kwargs.setdefault("markersize", 4)
-
-        plt.plot(self.delta["mean_bin"], self.delta["mean_effect"], **kwargs)
-
-        xlim = xlim or [
-            np.min(self.delta.mean_bin) - 100,
-            np.max(self.delta.mean_bin) + 100,
-        ]
-        ylim = ylim or [
-            np.min(self.delta.mean_effect) - 25,
-            np.max(self.delta.mean_effect) + 25,
-        ]
-
-        plt.margins(x=0.5)
-        _adjust_plt(xlim, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
-
-        if show:
-            plt.show(block=False)
-
-
-def _adjust_plt(xlim, ylim, xlabel, ylabel, label_fontsize, tick_fontsize):
-    """Internal function to adjust some plot properties."""
-    plt.xlim(xlim)
-    plt.ylim(ylim)
-    plt.xlabel(xlabel, fontsize=label_fontsize)
-    plt.xticks(fontsize=tick_fontsize)
-    plt.ylabel(ylabel, fontsize=label_fontsize)
-    plt.yticks(fontsize=tick_fontsize)
+    def plot(self, **kwargs):
+        """Plot."""
+        DmcPlot(res_th=self, **kwargs).plot_delta()

@@ -1,7 +1,21 @@
 import matplotlib.pyplot as plt
 import numpy as np
+from dataclasses import dataclass
 from scipy.optimize import fmin
 from pydmc.dmcsim import DmcSim, DmcParameters
+
+
+@dataclass
+class DmcParametersFixed:
+    amp: False
+    tau: False
+    drc: False
+    bnds: False
+    res_mean: False
+    res_sd: False
+    aa_shape: False
+    sp_shape: False
+    sigma: True
 
 
 class DmcFit:
@@ -9,9 +23,39 @@ class DmcFit:
         self,
         res_ob,
         n_trls=100000,
-        start_vals=None,
-        min_vals=None,
-        max_vals=None,
+        start_vals=DmcParameters(
+            amp=20,
+            tau=200,
+            drc=0.5,
+            bnds=75,
+            res_mean=300,
+            res_sd=30,
+            aa_shape=2,
+            sp_shape=3,
+            sigma=4,
+        ),
+        min_vals=DmcParameters(
+            amp=0,
+            tau=5,
+            drc=0.1,
+            bnds=20,
+            res_mean=200,
+            res_sd=5,
+            aa_shape=1,
+            sp_shape=2,
+            sigma=1,
+        ),
+        max_vals=DmcParameters(
+            amp=40,
+            tau=300,
+            drc=1.0,
+            bnds=150,
+            res_mean=800,
+            res_sd=100,
+            aa_shape=3,
+            sp_shape=4,
+            sigma=10,
+        ),
         fixed_fit=None,
         n_delta=19,
         p_delta=None,
@@ -47,72 +91,8 @@ class DmcFit:
         self.n_caf = n_caf
         self.var_sp = var_sp
         self.cost_value = np.Inf
-        start_vals = {
-            "amp": 20,
-            "tau": 200,
-            "drc": 0.5,
-            "bnds": 75,
-            "res_mean": 300,
-            "res_sd": 30,
-            "aa_shape": 2,
-            "sp_shape": 3,
-            "sigma": 4,
-        }
-        if self.start_vals is None:
-            self.start_vals = start_vals
-        else:
-            start_vals.update(self.start_vals)
-            self.start_vals = start_vals
-        min_vals = {
-            "amp": 0,
-            "tau": 5,
-            "drc": 0.1,
-            "bnds": 20,
-            "res_mean": 200,
-            "res_sd": 5,
-            "aa_shape": 1,
-            "sp_shape": 2,
-            "sigma": 1,
-        }
-        if self.min_vals is None:
-            self.min_vals = min_vals
-        else:
-            min_vals.update(self.min_vals)
-            self.min_vals = min_vals
-        max_vals = {
-            "amp": 40,
-            "tau": 300,
-            "drc": 1.0,
-            "bnds": 150,
-            "res_mean": 800,
-            "res_sd": 100,
-            "aa_shape": 3,
-            "sp_shape": 4,
-            "sigma": 10,
-        }
-        if self.max_vals is None:
-            self.max_vals = max_vals
-        else:
-            max_vals.update(self.max_vals)
-            self.max_vals = max_vals
-        fixed_fit = {
-            "amp": False,
-            "tau": False,
-            "drc": False,
-            "bnds": False,
-            "res_mean": False,
-            "res_sd": False,
-            "aa_shape": False,
-            "sp_shape": False,
-            "sigma": True,
-        }
-        if self.fixed_fit is None:
-            self.fixed_fit = fixed_fit
-        else:
-            fixed_fit.update(self.fixed_fit)
-            self.fixed_fit = fixed_fit
-
-        for key, value in self.fixed_fit.items():
+        self.fixed_fit = DmcParametersFixed()
+        for key, value in self.fixed_fit.__dict__.items():
             if value:
                 self.min_vals[key] = self.start_vals[key]
                 self.max_vals[key] = self.start_vals[key]
@@ -127,7 +107,6 @@ class DmcFit:
     def summary(self):
         """Print summary of DmcFit."""
         print(
-            "DMC Fitted Parameter Values:\n",
             f"amp:{self.res_th.amp:4.1f}",
             f"tau:{self.res_th.tau:4.1f}",
             f"drc:{self.res_th.drc:4.2f}",
@@ -166,18 +145,7 @@ class DmcFit:
         )
 
         self.cost_value = DmcFit.calculate_cost_value_rmse(self.res_th, self.res_ob)
-
-        print(
-            f"amp:{x[0]:4.1f}",
-            f"tau:{x[1]:4.1f}",
-            f"drc:{x[2]:4.2f}",
-            f"bnds:{x[3]:4.1f}",
-            f"res_mean:{x[4]:4.0f}",
-            f"res_sd:{x[5]:4.1f}",
-            f"aa_shape:{x[6]:4.1f}",
-            f"sp_shape:{x[7]:4.1f}",
-            f"| cost={self.cost_value:.2f}",
-        )
+        self.summary()
 
         return self.cost_value
 
@@ -218,7 +186,7 @@ class DmcFit:
     def plot(
         self, label_fontsize=12, tick_fontsize=10, hspace=0.5, wspace=0.5, **kwargs
     ):
-        """ Plot.
+        """Plot.
 
         Parameters
         ----------
