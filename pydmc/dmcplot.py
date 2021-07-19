@@ -140,7 +140,6 @@ class DmcPlot:
         colors=("green", "red"),
         **kwargs
     ):
-
         """Plot activation"""
 
         if not self.dat.xt:
@@ -150,7 +149,7 @@ class DmcPlot:
         plt.plot(self.dat.eq4, "k-")
         plt.plot(self.dat.eq4 * -1, "k--")
 
-        l_kws = DmcPlot.filter_dict(kwargs, inspect.signature(plt.Line2D))
+        l_kws = _filter_dict(kwargs, plt.Line2D)
 
         plt.plot(self.dat.xt[0], color=colors[0], label=cond_labels[0], **l_kws)
         plt.plot(self.dat.xt[1], color=colors[1], label=cond_labels[1], **l_kws)
@@ -204,7 +203,7 @@ class DmcPlot:
             print("Plotting individual trials function requires full_data=True")
             return
 
-        l_kws = DmcPlot.filter_dict(kwargs, inspect.signature(plt.Line2D))
+        l_kws = _filter_dict(kwargs, plt.Line2D)
         for trl in range(self.dat.n_trls_data):
             if trl == 0:
                 labels = cond_labels
@@ -274,7 +273,7 @@ class DmcPlot:
         comp_pdf, axes1 = fastKDE.pdf(self.dat.dat[0][0])
         incomp_pdf, axes2 = fastKDE.pdf(self.dat.dat[1][0])
 
-        l_kws = DmcPlot.filter_dict(kwargs, inspect.signature(plt.Line2D))
+        l_kws = _filter_dict(kwargs, plt.Line2D)
         plt.plot(axes1, comp_pdf, color=colors[0], label=cond_labels[0], **l_kws)
         plt.plot(axes2, incomp_pdf, color=colors[1], label=cond_labels[1], **l_kws)
 
@@ -315,7 +314,7 @@ class DmcPlot:
         kwargs
         """
 
-        l_kws = DmcPlot.filter_dict(kwargs, inspect.signature(plt.Line2D))
+        l_kws = _filter_dict(kwargs, plt.Line2D)
         if hasattr(self.dat, "prms"):
             for comp in (0, 1):
                 pdf, axes = fastKDE.pdf(self.dat.dat[comp][0])
@@ -386,7 +385,7 @@ class DmcPlot:
         kwargs.setdefault("marker", "o")
         kwargs.setdefault("markersize", 4)
 
-        l_kws = DmcPlot.filter_dict(kwargs, inspect.signature(plt.Line2D))
+        l_kws = _filter_dict(kwargs, plt.Line2D)
         for idx, comp in enumerate(("comp", "incomp")):
             plt.plot(
                 self.dat.caf["bin"][self.dat.caf["Comp"] == comp],
@@ -437,7 +436,7 @@ class DmcPlot:
         xlim = xlim or [np.min(datx) - 100, np.max(datx) + 100]
         ylim = ylim or [np.min(daty) - 25, np.max(daty) + 25]
 
-        l_kws = DmcPlot.filter_dict(kwargs, inspect.signature(plt.Line2D))
+        l_kws = _filter_dict(kwargs, plt.Line2D)
         plt.plot(datx, daty, **l_kws)
         _adjust_plt(xlim=xlim, ylim=ylim, xlabel=xlabel, ylabel=ylabel, **kwargs)
 
@@ -548,14 +547,6 @@ class DmcPlot:
         if show:
             plt.show(block=False)
 
-    @staticmethod
-    def filter_dict(given, allowed):
-        f = {k: v for k, v in given.items() if k in allowed.parameters.keys()}
-        if f is None:
-            return {}
-        else:
-            return f
-
 
 def _plot_beh(dat, cond_labels, ylim, xlabel, ylabel, zeroed, **kwargs):
     """Internal function to plot rt/er for comp vs. comp"""
@@ -564,7 +555,7 @@ def _plot_beh(dat, cond_labels, ylim, xlabel, ylabel, zeroed, **kwargs):
     kwargs.setdefault("marker", "o")
     kwargs.setdefault("markersize", 4)
 
-    l_kws = DmcPlot.filter_dict(kwargs, inspect.signature(plt.Line2D))
+    l_kws = _filter_dict(kwargs, plt.Line2D)
     plt.plot(cond_labels, dat, **l_kws)
     plt.margins(x=0.5)
 
@@ -576,9 +567,18 @@ def _plot_beh(dat, cond_labels, ylim, xlabel, ylabel, zeroed, **kwargs):
     _adjust_plt(ylim=ylim, xlabel=xlabel, ylabel=ylabel, **kwargs)
 
 
+def _filter_dict(given, allowed):
+    """Internal function to filter dict **kwargs"""
+    f = {}
+    allowed = inspect.signature(allowed).parameters
+    for k, v in given.items():
+        if k in allowed.keys():
+            f[k] = v
+    return f
+
+
 def _adjust_plt(**kwargs):
     """Internal function to adjust some plot properties."""
-    print(kwargs)
     plt.xlim(kwargs.get("xlim", None))
     plt.ylim(kwargs.get("ylim", None))
     plt.xlabel(kwargs.get("xlabel", ""), fontsize=kwargs.get("label_fontsize", 12))
