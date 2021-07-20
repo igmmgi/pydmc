@@ -15,14 +15,20 @@ pip install -e pydmc
 
 ## Basic Examples
 ```python
-from pydmc.dmcsim import DmcSim
+from pydmc.dmcsim import DmcSim, DmcParameters
 dat = DmcSim(full_data=True)
 dat.plot()
 ```
 ![alt text](/figures/figure1.png)
 ```python
 from pydmc.dmcsim import DmcSim
-dat = DmcSim(full_data=True, tau=150)
+dat = DmcSim(DmcParameters(tau=150), full_data=True)
 dat.plot()
 ```
 ![alt text](/figures/figure2.png)
+
+```python
+from pydmc.dmcsim import DmcSim
+dat = DmcSim(DmcParameters(tau=150))
+dat.plot()
+```
