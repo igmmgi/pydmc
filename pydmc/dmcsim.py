@@ -50,23 +50,23 @@ class DmcParameters:
     dr_shape: int, optional
         shape parameter of drift rate
     """
-
     amp: float = 20
     tau: float = 30
-    aa_shape: float = 2
     drc: float = 0.5
-    sigma: float = 4
     bnds: float = 75
-    res_dist: int = 1
     res_mean: float = 300
     res_sd: float = 30
+    aa_shape: float = 2
+    sp_shape: float = 3
+    sigma: float = 4
+
     t_max: int = 1000
     var_sp: bool = False
-    sp_lim: tuple = (-75, 75)
-    sp_shape: float = 3
     var_dr: bool = False
+    sp_lim: tuple = (-75, 75)
     dr_lim: tuple = (0.1, 0.7)
     dr_shape: float = 3
+    res_dist: int = 1
 
 
 class DmcSim:

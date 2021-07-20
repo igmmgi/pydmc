@@ -408,6 +408,515 @@ class DmcPlot:
             plt.show(block=False)
 
 
+# class DmcPlotFit:
+#     def __init__(self, dat_th, dat_ob):
+#         self.dat_th = dat_th
+#         self.dat_ob = dat_ob
+#
+#     def plot(
+#         self, label_fontsize=12, tick_fontsize=10, hspace=0.5, wspace=0.5, **kwargs
+#     ):
+#         """Plot.
+#
+#         Parameters
+#         ----------
+#         label_fontsize
+#         tick_fontsize
+#         hspace
+#         wspace
+#         kwargs
+#         """
+#
+#         # upper left panel (rt correct)
+#         plt.subplot2grid((3, 2), (0, 0))
+#         self.plot_rt_correct(
+#             show=False,
+#             label_fontsize=label_fontsize,
+#             tick_fontsize=tick_fontsize,
+#             **kwargs,
+#         )
+#
+#         # middle left panel
+#         plt.subplot2grid((3, 2), (1, 0))
+#         self.plot_er(
+#             show=False,
+#             label_fontsize=label_fontsize,
+#             tick_fontsize=tick_fontsize,
+#             **kwargs,
+#         )
+#
+#         # bottom left panel
+#         plt.subplot2grid((3, 2), (2, 0))
+#         self.plot_rt_error(
+#             show=False,
+#             label_fontsize=label_fontsize,
+#             tick_fontsize=tick_fontsize,
+#             **kwargs,
+#         )
+#
+#         # upper right panel (CDF)
+#         plt.subplot2grid((3, 2), (0, 1))
+#         self.plot_cdf(
+#             show=False,
+#             label_fontsize=label_fontsize,
+#             tick_fontsize=tick_fontsize,
+#             **kwargs,
+#         )
+#
+#         # middle right panel (CAF)
+#         plt.subplot2grid((3, 2), (1, 1))
+#         self.plot_caf(
+#             show=False,
+#             label_fontsize=label_fontsize,
+#             tick_fontsize=tick_fontsize,
+#             **kwargs,
+#         )
+#
+#         # bottom right panel (delta)
+#         plt.subplot2grid((3, 2), (2, 1))
+#         self.plot_delta(
+#             show=False,
+#             label_fontsize=label_fontsize,
+#             tick_fontsize=tick_fontsize,
+#             **kwargs,
+#         )
+#
+#         plt.subplots_adjust(hspace=hspace, wspace=wspace)
+#         plt.show(block=False)
+#
+#     def plot_rt_correct(
+#         self,
+#         show=True,
+#         ylim=None,
+#         xlabel=None,
+#         ylabel="RT Correct [ms]",
+#         label_fontsize=12,
+#         tick_fontsize=10,
+#         cond_labels=("Compatible", "Incompatible"),
+#         colors=("black", "grey"),
+#         linestyles=("-", "--"),
+#         legend_labels=("Observed", "Predicted"),
+#         legend_position="upper left",
+#         **kwargs,
+#     ):
+#         """Plot correct RT's.
+#
+#         Parameters
+#         ----------
+#         show
+#         ylim
+#         xlabel
+#         ylabel
+#         label_fontsize
+#         tick_fontsize
+#         cond_labels
+#         colors
+#         linestyles
+#         legend_labels
+#         legend_position
+#         kwargs
+#         """
+#
+#         kwargs.setdefault("marker", "o")
+#         kwargs.setdefault("markersize", 4)
+#
+#         plt.plot(
+#             cond_labels,
+#             self.res_ob.summary["rt_cor"],
+#             color=colors[0],
+#             linestyle=linestyles[0],
+#             label=legend_labels[0],
+#             **kwargs,
+#         )
+#         plt.plot(
+#             cond_labels,
+#             self.res_th.summary["rt_cor"],
+#             color=colors[1],
+#             linestyle=linestyles[1],
+#             label=legend_labels[1],
+#             **kwargs,
+#         )
+#
+#         if ylim is None:
+#             ylim = [
+#                 np.min(self.res_ob.summary["rt_cor"]) - 100,
+#                 np.max(self.res_ob.summary["rt_cor"]) + 100,
+#             ]
+#
+#         plt.margins(x=0.5)
+#         _adjust_plt(None, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
+#
+#         if legend_position:
+#             plt.legend(loc=legend_position)
+#
+#         if show:
+#             plt.show(block=False)
+#
+#     def plot_er(
+#         self,
+#         show=True,
+#         ylim=None,
+#         xlabel=None,
+#         ylabel="Error Rate [%]",
+#         label_fontsize=12,
+#         tick_fontsize=10,
+#         cond_labels=("Compatible", "Incompatible"),
+#         colors=("black", "grey"),
+#         linestyles=("-", "--"),
+#         legend_labels=("Observed", "Predicted"),
+#         legend_position="upper left",
+#         **kwargs,
+#     ):
+#         """Plot error rate.
+#
+#         Parameters
+#         ----------
+#         show
+#         ylim
+#         xlabel
+#         ylabel
+#         label_fontsize
+#         tick_fontsize
+#         cond_labels
+#         colors
+#         linestyles
+#         legend_labels
+#         legend_position
+#         kwargs
+#         """
+#
+#         kwargs.setdefault("marker", "o")
+#         kwargs.setdefault("markersize", 4)
+#
+#         plt.plot(
+#             cond_labels,
+#             self.res_ob.summary["per_err"],
+#             color=colors[0],
+#             linestyle=linestyles[0],
+#             label=legend_labels[0],
+#             **kwargs,
+#         )
+#         plt.plot(
+#             cond_labels,
+#             self.res_th.summary["per_err"],
+#             color=colors[1],
+#             linestyle=linestyles[1],
+#             label=legend_labels[1],
+#             **kwargs,
+#         )
+#
+#         if ylim is None:
+#             ylim = [0, np.max(self.res_ob.summary["per_err"]) + 5]
+#
+#         plt.margins(x=0.5)
+#         _adjust_plt(None, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
+#
+#         if legend_position:
+#             plt.legend(loc=legend_position)
+#
+#         if show:
+#             plt.show(block=False)
+#
+#     def plot_rt_error(
+#         self,
+#         show=True,
+#         ylim=None,
+#         xlabel=None,
+#         ylabel="RT Correct [ms]",
+#         label_fontsize=12,
+#         tick_fontsize=10,
+#         cond_labels=("Compatible", "Incompatible"),
+#         colors=("black", "grey"),
+#         linestyles=("-", "--"),
+#         legend_labels=("Observed", "Predicted"),
+#         legend_position="upper left",
+#         **kwargs,
+#     ):
+#         """Plot error RT's.
+#
+#         Parameters
+#         ----------
+#         show
+#         ylim
+#         xlabel
+#         ylabel
+#         label_fontsize
+#         tick_fontsize
+#         cond_labels
+#         colors
+#         linestyles
+#         legend_labels
+#         legend_position
+#         kwargs
+#         """
+#
+#         kwargs.setdefault("marker", "o")
+#         kwargs.setdefault("markersize", 4)
+#
+#         plt.plot(
+#             cond_labels,
+#             self.res_ob.summary["rt_err"],
+#             color=colors[0],
+#             linestyle=linestyles[0],
+#             label=legend_labels[0],
+#             **kwargs,
+#         )
+#         plt.plot(
+#             cond_labels,
+#             self.res_th.summary["rt_err"],
+#             color=colors[1],
+#             linestyle=linestyles[1],
+#             label=legend_labels[1],
+#             **kwargs,
+#         )
+#
+#         if ylim is None:
+#             ylim = [
+#                 np.min(self.res_ob.summary["rt_err"]) - 100,
+#                 np.max(self.res_ob.summary["rt_err"]) + 100,
+#             ]
+#
+#         plt.margins(x=0.5)
+#         _adjust_plt(None, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
+#
+#         if legend_position:
+#             plt.legend(loc=legend_position)
+#
+#         if show:
+#             plt.show(block=False)
+#
+#     def plot_cdf(
+#         self,
+#         show=True,
+#         xlim=None,
+#         xlabel=None,
+#         legend_labels=(
+#             "Compatible Observed",
+#             "Incompatible Observed",
+#             "Compatible Predicted",
+#             "Incompatible Predicted",
+#         ),
+#         legend_position="lower right",
+#         ylabel="CDF",
+#         label_fontsize=12,
+#         tick_fontsize=10,
+#         colors=("green", "red"),
+#         **kwargs,
+#     ):
+#         """
+#
+#         Parameters
+#         ----------
+#         show
+#         xlim
+#         xlabel
+#         legend_labels
+#         legend_position
+#         ylabel
+#         label_fontsize
+#         tick_fontsize
+#         colors
+#         kwargs
+#         """
+#         kwargs.setdefault("linestyle", "None")
+#         kwargs.setdefault("marker", "o")
+#         kwargs.setdefault("markersize", 4)
+#
+#         plt.plot(
+#             self.res_ob.delta["mean_comp"],
+#             np.linspace(0, 1, self.n_delta + 2)[1:-1],
+#             color=colors[0],
+#             label=legend_labels[0],
+#             **kwargs,
+#         )
+#         plt.plot(
+#             self.res_ob.delta["mean_incomp"],
+#             np.linspace(0, 1, self.n_delta + 2)[1:-1],
+#             color=colors[1],
+#             label=legend_labels[1],
+#             **kwargs,
+#         )
+#
+#         kwargs["linestyle"] = "-"
+#         kwargs["marker"] = "None"
+#         plt.plot(
+#             self.res_th.delta["mean_comp"],
+#             np.linspace(0, 1, self.n_delta + 2)[1:-1],
+#             color=colors[0],
+#             label=legend_labels[2],
+#             **kwargs,
+#         )
+#         plt.plot(
+#             self.res_th.delta["mean_incomp"],
+#             np.linspace(0, 1, self.n_delta + 2)[1:-1],
+#             color=colors[1],
+#             label=legend_labels[3],
+#             **kwargs,
+#         )
+#
+#         if xlim is None:
+#             xlim = [
+#                 np.min(self.res_ob.delta.mean_bin) - 100,
+#                 np.max(self.res_ob.delta.mean_bin) + 100,
+#             ]
+#
+#         plt.margins(x=0.5)
+#         _adjust_plt(xlim, None, xlabel, ylabel, label_fontsize, tick_fontsize)
+#
+#         if legend_position:
+#             plt.legend(loc=legend_position)
+#
+#         if show:
+#             plt.show(block=False)
+#
+#     def plot_caf(
+#         self,
+#         show=True,
+#         ylim=(0, 1.1),
+#         xlabel="RT Bin",
+#         ylabel="CAF",
+#         label_fontsize=12,
+#         tick_fontsize=10,
+#         legend_labels=(
+#             "Compatible Observed",
+#             "Incompatible Observed",
+#             "Compatible Predicted",
+#             "Incompatible Predicted",
+#         ),
+#         legend_position="lower right",
+#         colors=("green", "red"),
+#         **kwargs,
+#     ):
+#         """
+#
+#         Parameters
+#         ----------
+#         show
+#         ylim
+#         xlabel
+#         ylabel
+#         label_fontsize
+#         tick_fontsize
+#         legend_labels
+#         legend_position
+#         colors
+#         kwargs
+#         """
+#         kwargs.setdefault("linestyle", "None")
+#         kwargs.setdefault("marker", "o")
+#         kwargs.setdefault("markersize", 4)
+#
+#         plt.plot(
+#             self.res_ob.caf["bin"][self.res_ob.caf["Comp"] == "comp"],
+#             self.res_ob.caf["Error"][self.res_ob.caf["Comp"] == "comp"],
+#             color=colors[0],
+#             label=legend_labels[0],
+#             **kwargs,
+#         )
+#         plt.plot(
+#             self.res_ob.caf["bin"][self.res_ob.caf["Comp"] == "incomp"],
+#             self.res_ob.caf["Error"][self.res_ob.caf["Comp"] == "incomp"],
+#             color=colors[1],
+#             label=legend_labels[1],
+#             **kwargs,
+#         )
+#
+#         kwargs["linestyle"] = "-"
+#         kwargs["marker"] = "None"
+#         plt.plot(
+#             self.res_th.caf["bin"][self.res_th.caf["Comp"] == "comp"],
+#             self.res_th.caf["Error"][self.res_th.caf["Comp"] == "comp"],
+#             color=colors[0],
+#             label=legend_labels[0],
+#             **kwargs,
+#         )
+#         plt.plot(
+#             self.res_th.caf["bin"][self.res_th.caf["Comp"] == "incomp"],
+#             self.res_th.caf["Error"][self.res_th.caf["Comp"] == "incomp"],
+#             color=colors[1],
+#             label=legend_labels[1],
+#             **kwargs,
+#         )
+#
+#         plt.xticks(range(1, self.n_caf + 1), [str(x) for x in range(1, self.n_caf + 1)])
+#         _adjust_plt(None, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
+#
+#         if legend_position:
+#             plt.legend(loc=legend_position)
+#
+#         if show:
+#             plt.show(block=False)
+#
+#     def plot_delta(
+#         self,
+#         show=True,
+#         xlim=None,
+#         ylim=None,
+#         xlabel="Time (ms)",
+#         ylabel=r"$\Delta$",
+#         label_fontsize=12,
+#         tick_fontsize=10,
+#         legend_labels=("Observed", "Predicted"),
+#         legend_position="lower right",
+#         **kwargs,
+#     ):
+#         """Plot reaction-time delta plots.
+#
+#         Parameters
+#         ----------
+#         show
+#         xlim
+#         ylim
+#         xlabel
+#         ylabel
+#         label_fontsize
+#         tick_fontsize
+#         legend_labels
+#         legend_position
+#         kwargs
+#         """
+#
+#         kwargs.setdefault("color", "black")
+#         kwargs.setdefault("marker", "o")
+#         kwargs.setdefault("markersize", 4)
+#         kwargs.setdefault("linestyle", "None")
+#
+#         plt.plot(
+#             self.res_ob.delta["mean_bin"],
+#             self.res_ob.delta["mean_effect"],
+#             label=legend_labels[0],
+#             **kwargs,
+#         )
+#
+#         kwargs["linestyle"] = "-"
+#         kwargs["marker"] = "None"
+#         plt.plot(
+#             self.res_th.delta["mean_bin"],
+#             self.res_th.delta["mean_effect"],
+#             label=legend_labels[1],
+#             **kwargs,
+#         )
+#
+#         xlim = xlim or [
+#             np.min(self.res_ob.delta.mean_bin) - 100,
+#             np.max(self.res_ob.delta.mean_bin) + 100,
+#         ]
+#         ylim = ylim or [
+#             np.min(self.res_ob.delta.mean_effect) - 25,
+#             np.max(self.res_ob.delta.mean_effect) + 25,
+#         ]
+#         _adjust_plt(xlim, ylim, xlabel, ylabel, label_fontsize, tick_fontsize)
+#
+#         if legend_position:
+#             plt.legend(loc=legend_position)
+#
+#         if show:
+#             plt.show(block=False)
+
+
+
+
+
 def _plot_beh(dat, cond_labels, zeroed, **kwargs):
     """Internal function to plot rt/er for comp vs. comp"""
 
