@@ -1,8 +1,8 @@
 """ Basic unittests for DMC """
 import unittest
-from unittest import TestCase
+# from unittest import TestCase
 
-from pydmc.dmcsim import DmcSim
+from pydmc.dmcsim import DmcSim, DmcParameters
 
 
 class DMCTestCaseDmcSim(unittest.TestCase):
@@ -18,7 +18,7 @@ class DMCTestCaseDmcSim(unittest.TestCase):
         amp = 20, tau = 30, mu = 0.5, sigm = 4, bnds = 75,
         res_mean = 300, res_sd = 30
         """
-        dat = DmcSim(tau=30)
+        dat = DmcSim(DmcParameters(tau=30))
 
         self.assertLess(abs(440 - dat.summary["rt_cor"][0]), self.rt_tolerance)
         self.assertLess(abs(106 - dat.summary["sd_cor"][0]), self.sd_tolerance)
@@ -33,7 +33,7 @@ class DMCTestCaseDmcSim(unittest.TestCase):
         amp = 20, tau = 30, mu = 0.5, sigm = 4, bnds = 75,
         res_mean = 300, res_sd = 30
         """
-        dat = DmcSim(tau=30, full_data=False)
+        dat = DmcSim(DmcParameters(tau=30), full_data=False)
 
         self.assertLess(abs(440 - dat.summary["rt_cor"][0]), self.rt_tolerance)
         self.assertLess(abs(106 - dat.summary["sd_cor"][0]), self.sd_tolerance)
@@ -48,7 +48,7 @@ class DMCTestCaseDmcSim(unittest.TestCase):
         amp = 20, tau = 150, mu = 0.5, sigm = 4, bnds = 75,
         res_mean = 300, res_sd = 30
         """
-        dat = DmcSim(tau=150)
+        dat = DmcSim(DmcParameters(tau=150))
 
         self.assertLess(abs(422 - dat.summary["rt_cor"][0]), self.rt_tolerance)
         self.assertLess(abs(90 - dat.summary["sd_cor"][0]), self.sd_tolerance)
@@ -63,7 +63,7 @@ class DMCTestCaseDmcSim(unittest.TestCase):
         amp = 20, tau = 150, mu = 0.5, sigm = 4, bnds = 75,
         res_mean = 300, res_sd = 30
         """
-        dat = DmcSim(tau=150, full_data=False)
+        dat = DmcSim(DmcParameters(tau=150), full_data=False)
 
         self.assertLess(abs(422 - dat.summary["rt_cor"][0]), self.rt_tolerance)
         self.assertLess(abs(90 - dat.summary["sd_cor"][0]), self.sd_tolerance)
@@ -78,7 +78,7 @@ class DMCTestCaseDmcSim(unittest.TestCase):
         amp = 20, tau = 90, mu = 0.5, sigm = 4, bnds = 75,
         res_mean = 300, res_sd = 30
         """
-        dat = DmcSim(tau=90)
+        dat = DmcSim(DmcParameters(tau=90))
 
         self.assertLess(abs(420 - dat.summary["rt_cor"][0]), self.rt_tolerance)
         self.assertLess(abs(96 - dat.summary["sd_cor"][0]), self.sd_tolerance)
@@ -93,7 +93,7 @@ class DMCTestCaseDmcSim(unittest.TestCase):
         amp = 20, tau = 90, mu = 0.5, sigm = 4, bnds = 75,
         res_mean = 300, res_sd = 30
         """
-        dat = DmcSim(tau=90, full_data=False)
+        dat = DmcSim(DmcParameters(tau=90), full_data=False)
 
         self.assertLess(abs(420 - dat.summary["rt_cor"][0]), self.rt_tolerance)
         self.assertLess(abs(96 - dat.summary["sd_cor"][0]), self.sd_tolerance)
@@ -108,7 +108,7 @@ class DMCTestCaseDmcSim(unittest.TestCase):
         amp = 20, tau = 30, mu = 0.5, sigm = 4, bnds = 75,
         res_mean = 300, res_sd = 30
         """
-        dat = DmcSim(tau=30, var_sp=True)
+        dat = DmcSim(DmcParameters(tau=30, var_sp=True))
 
         self.assertLess(abs(436 - dat.summary["rt_cor"][0]), self.rt_tolerance)
         self.assertLess(abs(116 - dat.summary["sd_cor"][0]), self.sd_tolerance)
@@ -123,7 +123,7 @@ class DMCTestCaseDmcSim(unittest.TestCase):
         amp = 20, tau = 30, mu = 0.5, sigm = 4, bnds = 75,
         res_mean = 300, res_sd = 30
         """
-        dat = DmcSim(tau=30, full_data=False, var_sp=True)
+        dat = DmcSim(DmcParameters(tau=30, var_sp=True), full_data=False)
 
         self.assertLess(abs(436 - dat.summary["rt_cor"][0]), self.rt_tolerance)
         self.assertLess(abs(116 - dat.summary["sd_cor"][0]), self.sd_tolerance)
@@ -153,7 +153,7 @@ class DMCTestCaseDmcSim(unittest.TestCase):
         amp = 20, tau = 30, mu = 0.5, sigm = 4, bnds = 75,
         res_mean = 300, res_sd = 30
         """
-        dat = DmcSim(tau=30, full_data=False, var_dr=True)
+        dat = DmcSim(DmcParameters(tau=30,var_dr=True), full_data=False)
 
         self.assertLess(abs(477 - dat.summary["rt_cor"][0]), self.rt_tolerance)
         self.assertLess(abs(145 - dat.summary["sd_cor"][0]), self.sd_tolerance)
@@ -164,7 +164,7 @@ class DMCTestCaseDmcSim(unittest.TestCase):
 
     # just check plot code runs
     def test_dmcsim10(self):
-        dat = DmcSim(tau=30)
+        dat = DmcSim(DmcParameters(tau=30))
         try:
             dat.plot()
             dat.plot_activation()
