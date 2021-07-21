@@ -13,6 +13,9 @@ class DmcPlot:
         kwargs.setdefault("fig_type", "summary1")
         kwargs.setdefault("hspace", 0.5)
         kwargs.setdefault("wspace", 0.5)
+
+        plt.figure(len(plt.get_fignums()) + 1)
+
         if hasattr(self.res, "prms"):
             if kwargs["fig_type"] == "summary1" and not self.res.full_data:
                 kwargs["fig_type"] = "summary2"
@@ -136,6 +139,9 @@ class DmcPlot:
             print("Plotting activation function requires full_data=True")
             return
 
+        if show:
+            plt.figure(len(plt.get_fignums()) + 1)
+
         l_kws = _filter_dict(kwargs, plt.Line2D)
 
         plt.plot(self.res.eq4, "k-")
@@ -172,6 +178,9 @@ class DmcPlot:
     ):
         """Plot individual trials."""
 
+        if show:
+            plt.figure(len(plt.get_fignums()) + 1)
+
         if not self.res.xt:
             print("Plotting individual trials function requires full_data=True")
             return
@@ -194,7 +203,7 @@ class DmcPlot:
                 )
         self._plot_bounds()
 
-        kwargs.setdefault("xlim", [0, self.dat.prms.t_max])
+        kwargs.setdefault("xlim", [0, self.res.prms.t_max])
         kwargs.setdefault("ylim", [-self.res.prms.bnds - 20, self.res.prms.bnds + 20])
         kwargs.setdefault("xlabel", "Time (ms)")
         kwargs.setdefault("ylabel", "X(t)")
@@ -220,6 +229,9 @@ class DmcPlot:
         **kwargs,
     ):
         """Plot PDF."""
+
+        if show:
+            plt.figure(len(plt.get_fignums()) + 1)
 
         l_kws = _filter_dict(kwargs, plt.Line2D)
         for comp in (0, 1):
@@ -248,6 +260,9 @@ class DmcPlot:
         **kwargs,
     ):
         """Plot CDF."""
+
+        if show:
+            plt.figure(len(plt.get_fignums()) + 1)
 
         l_kws = _filter_dict(kwargs, plt.Line2D)
         if hasattr(self.res, "prms"):
@@ -307,6 +322,9 @@ class DmcPlot:
     ):
         """Plot CAF."""
 
+        if show:
+            plt.figure(len(plt.get_fignums()) + 1)
+
         kwargs.setdefault("marker", "o")
         kwargs.setdefault("markersize", 4)
 
@@ -339,6 +357,9 @@ class DmcPlot:
     def plot_delta(self, show=True, **kwargs):
         """Plot reaction-time delta plots."""
 
+        if show:
+            plt.figure(len(plt.get_fignums()) + 1)
+
         kwargs.setdefault("color", "black")
         kwargs.setdefault("marker", "o")
         kwargs.setdefault("markersize", 4)
@@ -363,6 +384,9 @@ class DmcPlot:
     ):
         """Plot correct RT's."""
 
+        if show:
+            plt.figure(len(plt.get_fignums()) + 1)
+
         kwargs.setdefault("ylabel", "RT Correct [ms]")
 
         _plot_beh(
@@ -377,6 +401,9 @@ class DmcPlot:
 
     def plot_er(self, show=True, cond_labels=("Compatible", "Incompatible"), **kwargs):
         """Plot error rate"""
+
+        if show:
+            plt.figure(len(plt.get_fignums()) + 1)
 
         kwargs.setdefault("ylabel", "Error Rate [%]")
 
@@ -394,6 +421,9 @@ class DmcPlot:
         self, show=True, cond_labels=("Compatible", "Incompatible"), **kwargs
     ):
         """Plot error RT's."""
+
+        if show:
+            plt.figure(len(plt.get_fignums()) + 1)
 
         kwargs.setdefault("ylabel", "RT Error [ms]")
 
@@ -677,7 +707,7 @@ class DmcPlotFit:
                 self.res_th.caf["bin"][self.res_th.caf["Comp"] == comp],
                 self.res_th.caf["Error"][self.res_th.caf["Comp"] == comp],
                 color=colors[idx],
-                label=legend_labels[idx+2],
+                label=legend_labels[idx + 2],
                 **l_kws,
             )
 
