@@ -2,7 +2,6 @@ import glob
 import pkg_resources
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 from scipy.stats.mstats import mquantiles
 from pydmc.dmcplot import DmcPlot
 
@@ -80,7 +79,6 @@ class DmcOb:
     @staticmethod
     def read_data_files(data, sep="\t", skiprows=0):
         """
-
         Parameters
         ----------
         data
@@ -306,28 +304,28 @@ class DmcOb:
 
     def plot(self, **kwargs):
         """Plot."""
-        DmcPlot(res_th=self, **kwargs).plot()
+        DmcPlot(self).plot(**kwargs)
 
     def plot(self, **kwargs):
         """Plot."""
-        DmcPlot(res_th=self, **kwargs).plot_rt_correct()
+        DmcPlot(self).plot_rt_correct(**kwargs)
 
     def plot(self, **kwargs):
         """Plot."""
-        DmcPlot(res_th=self, **kwargs).plot_er()
+        DmcPlot(self).plot_er(**kwargs)
 
     def plot(self, **kwargs):
         """Plot."""
-        DmcPlot(res_th=self, **kwargs).plot_rt_error()
+        DmcPlot(self).plot_rt_error(**kwargs)
 
     def plot(self, **kwargs):
         """Plot."""
-        DmcPlot(res_th=self, **kwargs).plot_cdf()
+        DmcPlot(self).plot_cdf(**kwargs)
 
     def plot(self, **kwargs):
         """Plot."""
-        DmcPlot(res_th=self, **kwargs).plot_caf()
+        DmcPlot(self).plot_caf(**kwargs)
 
     def plot(self, **kwargs):
         """Plot."""
-        DmcPlot(res_th=self, **kwargs).plot_delta()
+        DmcPlot(self).plot_delta(**kwargs)

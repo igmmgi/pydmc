@@ -2,6 +2,7 @@ import numpy as np
 from dataclasses import dataclass, fields
 from scipy.optimize import fmin
 from pydmc.dmcsim import DmcSim, DmcParameters
+from pydmc.dmcplot import DmcPlotFit
 
 
 @dataclass
@@ -139,3 +140,31 @@ class DmcFit:
         cost_value = (weight_caf * cost_caf) + (weight_rt * cost_rt)
 
         return cost_value
+
+    def plot(self, **kwargs):
+        """Plot."""
+        DmcPlotFit(self.res_th, self.res_ob).plot(**kwargs)
+
+    def plot_rt_correct(self, **kwargs):
+        """Plot reaction time correct."""
+        DmcPlotFit(self.res_th, self.res_ob).plot_rt_correct(**kwargs)
+
+    def plot_er(self, **kwargs):
+        """Plot erorr rate."""
+        DmcPlotFit(self.res_th, self.res_ob).plot_er(**kwargs)
+
+    def plot_rt_error(self, **kwargs):
+        """Plot reaction time errors."""
+        DmcPlotFit(self.res_th, self.res_ob).plot_rt_error(**kwargs)
+
+    def plot_cdf(self, **kwargs):
+        """Plot CDF."""
+        DmcPlotFit(self.res_th, self.res_ob).plot_cdf(**kwargs)
+
+    def plot_caf(self, **kwargs):
+        """Plot CAF."""
+        DmcPlotFit(self.res_th, self.res_ob).plot_caf(**kwargs)
+
+    def plot_delta(self, **kwargs):
+        """Plot delta."""
+        DmcPlotFit(self.res_th, self.res_ob).plot_delta(**kwargs)

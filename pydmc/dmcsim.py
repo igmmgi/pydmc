@@ -50,6 +50,7 @@ class DmcParameters:
     dr_shape: int, optional
         shape parameter of drift rate
     """
+
     amp: float = 20
     tau: float = 30
     drc: float = 0.5
