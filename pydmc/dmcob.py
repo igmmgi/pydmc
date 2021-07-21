@@ -219,7 +219,7 @@ class DmcOb:
     def _calc_delta_values(self):
         """Calculate compatibility effect + delta values for correct trials."""
 
-        def deltafun(x, n):
+        def deltafun(x):
             # filter trials
             x = x[(x.outlier == 0) & (x.Error == 0)].reset_index()
 
@@ -282,7 +282,7 @@ class DmcOb:
             )
 
         self.delta_subject = (
-            self.data.groupby(["Subject"]).apply(deltafun, self.n_delta).reset_index()
+            self.data.groupby(["Subject"]).apply(deltafun).reset_index()
         ).drop("level_1", axis=1)
 
         def aggfun(x):
@@ -306,26 +306,26 @@ class DmcOb:
         """Plot."""
         DmcPlot(self).plot(**kwargs)
 
-    def plot(self, **kwargs):
+    def plot_rt_correct(self, **kwargs):
         """Plot."""
         DmcPlot(self).plot_rt_correct(**kwargs)
 
-    def plot(self, **kwargs):
+    def plot_er(self, **kwargs):
         """Plot."""
         DmcPlot(self).plot_er(**kwargs)
 
-    def plot(self, **kwargs):
+    def plot_rt_error(self, **kwargs):
         """Plot."""
         DmcPlot(self).plot_rt_error(**kwargs)
 
-    def plot(self, **kwargs):
+    def plot_cdf(self, **kwargs):
         """Plot."""
         DmcPlot(self).plot_cdf(**kwargs)
 
-    def plot(self, **kwargs):
+    def plot_caf(self, **kwargs):
         """Plot."""
         DmcPlot(self).plot_caf(**kwargs)
 
-    def plot(self, **kwargs):
+    def plot_delta(self, **kwargs):
         """Plot."""
         DmcPlot(self).plot_delta(**kwargs)

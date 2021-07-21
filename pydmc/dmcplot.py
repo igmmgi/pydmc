@@ -102,11 +102,11 @@ class DmcPlot:
         plt.subplot2grid((3, 2), (0, 0))
         self.plot_rt_correct(show=False, **kwargs)
 
-        # middle left pannel
+        # middle left panel
         plt.subplot2grid((3, 2), (1, 0))
         self.plot_er(show=False, **kwargs)
 
-        # bottom left pannel
+        # bottom left panel
         plt.subplot2grid((3, 2), (2, 0))
         self.plot_rt_error(show=False, **kwargs)
 
@@ -285,8 +285,8 @@ class DmcPlot:
 
             for idx, comp in enumerate(("mean_comp", "mean_incomp")):
                 plt.plot(
-                    self.delta[comp],
-                    np.linspace(0, 1, self.n_delta + 2)[1:-1],
+                    self.res.delta[comp],
+                    np.linspace(0, 1, self.res.n_delta + 2)[1:-1],
                     color=colors[idx],
                     label=cond_labels[idx],
                     **l_kws,

@@ -45,7 +45,8 @@ class DmcFit:
         var_sp
         """
         self.res_ob = res_ob
-        self.res_th = DmcSim
+        self.res_th = DmcSim(self.start_vals)
+        self.fit = None
         self.n_trls = n_trls
         self.start_vals = start_vals
         self.bound_vals = bound_vals
@@ -63,7 +64,6 @@ class DmcFit:
 
     def fit_data(self, **kwargs):
         self.start_vals.var_sp = True
-        self.res_th = DmcSim(self.start_vals)
         self.fit = fmin(
             self._function_to_minimise,
             [getattr(self.start_vals, f.name) for f in fields(self.start_vals)][:9],

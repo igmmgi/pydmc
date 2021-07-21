@@ -240,18 +240,18 @@ class DmcSim:
 
         summary = [
             [
-                round(np.mean(self.dat[0][0][self.dat[0][1] == 0])),
-                round(np.std(self.dat[0][0][self.dat[0][1] == 0])),
-                round(np.sum(self.dat[0][1] / self.n_trls) * 100, 1),
-                round(np.mean(self.dat[0][0][self.dat[0][1] == 1])),
-                round(np.std(self.dat[0][0][self.dat[0][1] == 1])),
+                np.round(np.mean(self.dat[0][0][self.dat[0][1] == 0])),
+                np.round(np.std(self.dat[0][0][self.dat[0][1] == 0])),
+                np.round(np.sum(self.dat[0][1] / self.n_trls) * 100, 1),
+                np.round(np.mean(self.dat[0][0][self.dat[0][1] == 1])),
+                np.round(np.std(self.dat[0][0][self.dat[0][1] == 1])),
             ],
             [
-                round(np.mean(self.dat[1][0][self.dat[1][1] == 0])),
-                round(np.std(self.dat[1][0][self.dat[1][1] == 0])),
-                round(np.sum(self.dat[1][1] / self.n_trls) * 100, 1),
-                round(np.mean(self.dat[1][0][self.dat[1][1] == 1])),
-                round(np.std(self.dat[1][0][self.dat[1][1] == 1])),
+                np.round(np.mean(self.dat[1][0][self.dat[1][1] == 0])),
+                np.round(np.std(self.dat[1][0][self.dat[1][1] == 0])),
+                np.round(np.sum(self.dat[1][1] / self.n_trls) * 100, 1),
+                np.round(np.mean(self.dat[1][0][self.dat[1][1] == 1])),
+                np.round(np.std(self.dat[1][0][self.dat[1][1] == 1])),
             ],
         ]
 
@@ -345,7 +345,7 @@ class DmcSim:
         )
 
     @staticmethod
-    def rand_beta(lim=(0, 1), shape=3, n_trls=1):
+    def rand_beta(lim=(0, 1), shape=3.0, n_trls=1):
         """Return random vector between limits weighted by beta function."""
         x = np.random.beta(shape, shape, n_trls)
         x = x * (lim[1] - lim[0]) + lim[0]
