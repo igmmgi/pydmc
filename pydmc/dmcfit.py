@@ -29,7 +29,8 @@ class DmcFit:
         p_delta=None,
         t_delta=1,
         n_caf=5,
-        var_sp=True,
+        cost_function = "RMSE",
+        var_sp=True
     ):
         """
         Parameters
@@ -45,7 +46,7 @@ class DmcFit:
         var_sp
         """
         self.res_ob = res_ob
-        self.res_th = DmcSim(self.start_vals)
+        self.res_th = DmcSim(start_vals)
         self.fit = None
         self.n_trls = n_trls
         self.start_vals = start_vals
@@ -57,6 +58,7 @@ class DmcFit:
         self.t_delta = t_delta
         self.n_caf = n_caf
         self.var_sp = var_sp
+        self.cost_function = cost_function
         self.cost_value = np.Inf
 
     def _fieldvalues(self, idx):
@@ -102,7 +104,8 @@ class DmcFit:
         self.res_th.prms.sp_lim = (-x[3], x[3])
 
         self.res_th.run_simulation()
-        self.cost_value = DmcFit.calculate_cost_value_rmse(self.res_th, self.res_ob)
+        if self.cost_function == "RMSE":
+            self.cost_value = DmcFit.calculate_cost_value_rmse(self.res_th, self.res_ob)
         self.summary()
 
         return self.cost_value

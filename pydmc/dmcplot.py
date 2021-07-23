@@ -295,7 +295,7 @@ class DmcPlot:
             kwargs.setdefault(
                 "xlim",
                 [
-                    np.min(self.res.mean_bin) - 100,
+                    np.min(self.res.delta.mean_bin) - 100,
                     np.max(self.res.delta.mean_bin) + 100,
                 ],
             )
