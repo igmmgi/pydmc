@@ -21,36 +21,35 @@ class DmcParameters:
         amplitude of automatic activation
     tau: int/float, optional
         time to peak automatic activation
-    aa_shape: int/float, optional
-        shape parameter of automatic activation
     drc: int/float, optional
         drift rate of controlled processes
-    sigma: int/float, optional
-        diffusion constant
     bnds: int/float, optional
         +- response barrier
-    res_dist: int, optional
-        non-decisional component distribution (1=normal, 2=uniform)
     res_mean: int/float, optional
         mean of non-decisional component
     res_sd: int/float, optional
         standard deviation of non-decisional component
+    aa_shape: int/float, optional
+        shape parameter of automatic activation
+    sp_shape: int/float, optional
+        shape parameter of starting point distribution
+    sigma: int/float, optional
+        diffusion constant
     t_max: int, optional
         number of time points per trial
     var_sp: bool, optional
         variable starting point
-    sp_lim: tuple, optional
-        limiit range of distribution of starting point
-    sp_shape: int/float, optional
-        shape parameter of starting point distribution
     var_dr: bool, optional
         variable drift rate
+    sp_lim: tuple, optional
+        limiit range of distribution of starting point
     dr_lim: tuple, optional
         limit range of distribution of drift rate
     dr_shape: int, optional
         shape parameter of drift rate
+    res_dist: int, optional
+        non-decisional component distribution (1=normal, 2=uniform)
     """
-
     amp: float = 20
     tau: float = 30
     drc: float = 0.5
@@ -60,7 +59,6 @@ class DmcParameters:
     aa_shape: float = 2
     sp_shape: float = 3
     sigma: float = 4
-
     t_max: int = 1000
     var_sp: bool = False
     var_dr: bool = False
@@ -87,10 +85,8 @@ class DmcSim:
         plt_figs=False,
     ):
         """
-        n_trls: int (1000 to 100000 (default)), optional
+        n_trls: int 100000 (default), optional
             number of trials
-        plt_figs: bool, optional
-            plot figures
         n_caf: range, optional
             caf bins
         n_delta: range, optional
@@ -98,7 +94,7 @@ class DmcSim:
         p_delta: array, optional
             delta percentiles
         t_delta: int, optional
-            type of delta calculation (1 = percentile, 2 = percentil bin average)
+            type of delta calculation (1 = percentile, 2 = percentile bin average)
         full_data: bool, optional
             run simulation to t_max to caluculate activation
         n_trls_data: int, optional
@@ -181,12 +177,12 @@ class DmcSim:
         self.dat = []
         for comp in (1, -1):
 
-            dr, sp = self._dr(), self._sp()
             drc = (
                 comp
                 * self.eq4
                 * ((self.prms.aa_shape - 1) / self.tim - 1 / self.prms.tau)
             )
+            dr, sp = self._dr(), self._sp()
 
             self.dat.append(
                 _run_simulation(
@@ -210,12 +206,12 @@ class DmcSim:
         self.dat = []
         for comp in (1, -1):
 
-            dr, sp = self._dr(), self._sp()
             drc = (
                 comp
                 * self.eq4
                 * ((self.prms.aa_shape - 1) / self.tim - 1 / self.prms.tau)
             )
+            dr, sp = self._dr(), self._sp()
 
             activation, trials, dat = _run_simulation_full(
                 drc,

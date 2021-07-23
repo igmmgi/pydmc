@@ -76,13 +76,14 @@ class DmcOb:
         self._calc_caf_values()
         self._calc_delta_values()
 
+    
     @staticmethod
     def read_data_files(data, sep="\t", skiprows=0):
         """
         Parameters
         ----------
         data
-        sep
+        sep 
         skiprows
 
         Returns
