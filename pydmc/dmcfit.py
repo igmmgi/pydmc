@@ -29,8 +29,8 @@ class DmcFit:
         p_delta=None,
         t_delta=1,
         n_caf=5,
-        cost_function = "RMSE",
-        var_sp=True
+        cost_function="RMSE",
+        var_sp=True,
     ):
         """
         Parameters
@@ -106,6 +106,8 @@ class DmcFit:
         self.res_th.run_simulation()
         if self.cost_function == "RMSE":
             self.cost_value = DmcFit.calculate_cost_value_rmse(self.res_th, self.res_ob)
+        elif self.cost_function == "SPE":
+            self.cost_value = DmcFit.calculate_cost_value_spe(self.res_th, self.res_ob)
         self.summary()
 
         return self.cost_value
@@ -143,6 +145,34 @@ class DmcFit:
         cost_value = (weight_caf * cost_caf) + (weight_rt * cost_rt)
 
         return cost_value
+
+    @staticmethod
+    def calculate_cost_value_spe(res_th, res_ob):
+        """calculate_cost_calue_spe
+
+        Parameters
+        ---------
+        res_th
+        res_ob
+        """
+        raise Exception("Not yet implemented!")
+        # cost_caf = np.sum(
+        #     ((res_ob.caf["Error"] - res_th.caf["Error"]) / res_ob.caf["Error"]) ** 2
+        # )
+        # cost_rt = np.sum(
+        #     (
+        #         (
+        #             res_ob.delta[["mean_comp", "mean_incomp"]]
+        #             - res_th.delta[["mean_comp", "mean_incomp"]]
+        #         )
+        #         / res_ob.delta[["mean_comp", "mean_incomp"]]
+        #     )
+        #     ** 2
+        # )
+
+        # cost_value = cost_rt + cost_caf
+
+        # return cost_value
 
     def plot(self, **kwargs):
         """Plot."""
