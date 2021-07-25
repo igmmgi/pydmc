@@ -1,6 +1,6 @@
 import numpy as np
-from dataclasses import dataclass, fields
-from scipy.optimize import fmin
+from dataclasses import dataclass, fields, astuple
+from scipy.optimize import minimize, differential_evolution
 from pydmc.dmcsim import DmcSim, DmcParameters
 from pydmc.dmcplot import DmcPlotFit
 
@@ -23,7 +23,7 @@ class DmcFit:
         self,
         res_ob,
         n_trls=100000,
-        start_vals=DmcParameters(),
+        start_vals=DmcParameters(var_sp=True),
         bound_vals=DmcParameterBounds(),
         n_delta=19,
         p_delta=None,
@@ -32,21 +32,8 @@ class DmcFit:
         cost_function="RMSE",
         var_sp=True,
     ):
-        """
-        Parameters
-        ----------
-        res_ob
-        n_trls
-        start_vals
-        bound_vals
-        n_delta
-        p_delta
-        t_delta
-        n_caf
-        var_sp
-        """
         self.res_ob = res_ob
-        self.res_th = DmcSim(start_vals)
+        self.res_th = None
         self.fit = None
         self.n_trls = n_trls
         self.start_vals = start_vals
@@ -58,17 +45,36 @@ class DmcFit:
         self.t_delta = t_delta
         self.n_caf = n_caf
         self.var_sp = var_sp
-        self.cost_function = cost_function
+        self.cost_function = self._assign_cost_function(cost_function)
         self.cost_value = np.Inf
 
     def _fieldvalues(self, idx):
         return [getattr(self.bound_vals, f.name)[idx] for f in fields(self.bound_vals)]
 
-    def fit_data(self, **kwargs):
-        self.start_vals.var_sp = True
-        self.fit = fmin(
+    def _assign_cost_function(self, cost_function):
+        if cost_function == "RMSE":
+            return self.calculate_cost_value_rmse
+        elif cost_function == "SPE":
+            return self.calculate_cost_value_spe
+        else:
+            raise Exception("cost function not implemented!")
+
+    def fit_data_neldermead(self, **kwargs):
+        self.res_th = DmcSim(self.start_vals)
+        kwargs.setdefault("maxiter", 500)
+        self.fit = minimize(
             self._function_to_minimise,
             [getattr(self.start_vals, f.name) for f in fields(self.start_vals)][:9],
+            method="Nelder-Mead",
+            bounds=astuple(self.bound_vals),
+            options=kwargs,
+        )
+
+    def fit_data_differential_evolution(self, **kwargs):
+        self.res_th = DmcSim(self.start_vals)
+        self.fit = differential_evolution(
+            self._function_to_minimise,
+            astuple(self.bound_vals),
             **kwargs,
         )
 
@@ -88,9 +94,14 @@ class DmcFit:
 
     def _function_to_minimise(self, x):
 
-        # bounds hack
-        x = np.maximum(x, self._min_vals)
-        x = np.minimum(x, self._max_vals)
+        self._update_parameters(x)
+        self.res_th.run_simulation()
+        self.cost_value = self.cost_function(self.res_th, self.res_ob)
+        self.summary()
+
+        return self.cost_value
+
+    def _update_parameters(self, x):
 
         self.res_th.prms.amp = x[0]
         self.res_th.prms.tau = x[1]
@@ -102,19 +113,14 @@ class DmcFit:
         self.res_th.prms.sp_shape = x[7]
         self.res_th.prms.sigma = x[8]
         self.res_th.prms.sp_lim = (-x[3], x[3])
-
-        self.res_th.run_simulation()
-        if self.cost_function == "RMSE":
-            self.cost_value = DmcFit.calculate_cost_value_rmse(self.res_th, self.res_ob)
-        elif self.cost_function == "SPE":
-            self.cost_value = DmcFit.calculate_cost_value_spe(self.res_th, self.res_ob)
-        self.summary()
-
-        return self.cost_value
+        self.res_th.prms.var_sp = True
 
     @staticmethod
     def calculate_cost_value_rmse(res_th, res_ob):
         """calculate_cost_value_rmse
+
+        Calculate Root Mean Square Error between simulated
+        and observed data points
 
         Parameters
         ----------
@@ -135,44 +141,40 @@ class DmcFit:
                     res_th.delta[["mean_comp", "mean_incomp"]]
                     - res_ob.delta[["mean_comp", "mean_incomp"]]
                 )
+                ** 2
             )
-            ** 2
         )
 
         weight_rt = n_rt / (n_rt + n_err)
         weight_caf = (1 - weight_rt) * 1500
 
-        cost_value = (weight_caf * cost_caf) + (weight_rt * cost_rt)
-
-        return cost_value
+        return (weight_caf * cost_caf) + (weight_rt * cost_rt)
 
     @staticmethod
     def calculate_cost_value_spe(res_th, res_ob):
         """calculate_cost_calue_spe
+
+        Calculate Squared Percentage Error between simulated
+        and observed data points
 
         Parameters
         ---------
         res_th
         res_ob
         """
-        raise Exception("Not yet implemented!")
-        # cost_caf = np.sum(
-        #     ((res_ob.caf["Error"] - res_th.caf["Error"]) / res_ob.caf["Error"]) ** 2
-        # )
-        # cost_rt = np.sum(
-        #     (
-        #         (
-        #             res_ob.delta[["mean_comp", "mean_incomp"]]
-        #             - res_th.delta[["mean_comp", "mean_incomp"]]
-        #         )
-        #         / res_ob.delta[["mean_comp", "mean_incomp"]]
-        #     )
-        #     ** 2
-        # )
+        cost_caf = np.sum(
+            ((res_ob.caf["Error"] - res_th.caf["Error"]) / res_ob.caf["Error"]) ** 2
+        )
 
-        # cost_value = cost_rt + cost_caf
+        cost_rt = np.sum(
+            (
+                (res_ob.delta.iloc[:, 1:3] - res_th.delta.iloc[:, 1:3])
+                / res_ob.delta.iloc[:, 1:3]
+            )
+            ** 2
+        ).sum()
 
-        # return cost_value
+        return cost_rt + cost_caf
 
     def plot(self, **kwargs):
         """Plot."""

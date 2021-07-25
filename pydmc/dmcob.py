@@ -60,22 +60,17 @@ class DmcOb:
 
         if not isinstance(data, pd.DataFrame):
             self.data = self.read_data_files(data, sep=sep, skiprows=skiprows)
-            self._columns()
-            self._comp_coding()
-            self._error_coding()
-            self._outlier()
         else:
             self.data = data
-            self._columns()
-            self._comp_coding()
-            self._error_coding()
-            self._outlier()
 
+        self._columns()
+        self._comp_coding()
+        self._error_coding()
+        self._outlier()
         self._aggregate_trials()
         self._aggregate_subjects()
         self._calc_caf_values()
         self._calc_delta_values()
-
 
     @staticmethod
     def read_data_files(data, sep="\t", skiprows=0):
@@ -308,25 +303,25 @@ class DmcOb:
         DmcPlot(self).plot(**kwargs)
 
     def plot_rt_correct(self, **kwargs):
-        """Plot."""
+        """Plot rt correct."""
         DmcPlot(self).plot_rt_correct(**kwargs)
 
     def plot_er(self, **kwargs):
-        """Plot."""
+        """Plot error rate."""
         DmcPlot(self).plot_er(**kwargs)
 
     def plot_rt_error(self, **kwargs):
-        """Plot."""
+        """Plot rt errors."""
         DmcPlot(self).plot_rt_error(**kwargs)
 
     def plot_cdf(self, **kwargs):
-        """Plot."""
+        """Plot cdf."""
         DmcPlot(self).plot_cdf(**kwargs)
 
     def plot_caf(self, **kwargs):
-        """Plot."""
+        """Plot caf."""
         DmcPlot(self).plot_caf(**kwargs)
 
     def plot_delta(self, **kwargs):
-        """Plot."""
+        """Plot delta."""
         DmcPlot(self).plot_delta(**kwargs)

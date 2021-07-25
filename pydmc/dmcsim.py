@@ -50,6 +50,7 @@ class DmcParameters:
     res_dist: int, optional
         non-decisional component distribution (1=normal, 2=uniform)
     """
+
     amp: float = 20
     tau: float = 30
     drc: float = 0.5
@@ -137,7 +138,6 @@ class DmcSim:
         self.t_delta = t_delta
         self.full_data = full_data
         self.n_trls_data = n_trls_data
-
         self.tim = None
         self.eq4 = None
         self.dat = None
@@ -154,7 +154,7 @@ class DmcSim:
             self.plot()
 
     def run_simulation(self):
-        """Run simulation."""
+        """Run DMC simulation."""
 
         self.tim = np.arange(1, self.prms.t_max + 1, 1)
         self.eq4 = (
@@ -234,22 +234,17 @@ class DmcSim:
     def _results_summary(self):
         """Create results summary table."""
 
-        summary = [
-            [
-                np.round(np.mean(self.dat[0][0][self.dat[0][1] == 0])),
-                np.round(np.std(self.dat[0][0][self.dat[0][1] == 0])),
-                np.round(np.sum(self.dat[0][1] / self.n_trls) * 100, 1),
-                np.round(np.mean(self.dat[0][0][self.dat[0][1] == 1])),
-                np.round(np.std(self.dat[0][0][self.dat[0][1] == 1])),
-            ],
-            [
-                np.round(np.mean(self.dat[1][0][self.dat[1][1] == 0])),
-                np.round(np.std(self.dat[1][0][self.dat[1][1] == 0])),
-                np.round(np.sum(self.dat[1][1] / self.n_trls) * 100, 1),
-                np.round(np.mean(self.dat[1][0][self.dat[1][1] == 1])),
-                np.round(np.std(self.dat[1][0][self.dat[1][1] == 1])),
-            ],
-        ]
+        summary = []
+        for comp in (0, 1):
+            summary.append(
+                [
+                    np.round(np.mean(self.dat[comp][0][self.dat[comp][1] == 0])),
+                    np.round(np.std(self.dat[comp][0][self.dat[comp][1] == 0])),
+                    np.round(np.sum(self.dat[comp][1] / self.n_trls) * 100, 1),
+                    np.round(np.mean(self.dat[comp][0][self.dat[comp][1] == 1])),
+                    np.round(np.std(self.dat[comp][0][self.dat[comp][1] == 1])),
+                ]
+            )
 
         self.summary = pd.DataFrame(
             summary,
@@ -290,7 +285,7 @@ class DmcSim:
             mean_bins = np.array(
                 [
                     mquantiles(
-                        self.dat[comp][0],
+                        self.dat[comp][0][self.dat[comp][1] == 0],
                         percentiles,
                         alphap=0.5,
                         betap=0.5,
@@ -343,10 +338,7 @@ class DmcSim:
     @staticmethod
     def rand_beta(lim=(0, 1), shape=3.0, n_trls=1):
         """Return random vector between limits weighted by beta function."""
-        x = np.random.beta(shape, shape, n_trls)
-        x = x * (lim[1] - lim[0]) + lim[0]
-
-        return x
+        return np.random.beta(shape, shape, n_trls) * (lim[1] - lim[0]) + lim[0]
 
     def _dr(self):
         if self.prms.var_dr:
