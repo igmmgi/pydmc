@@ -1,4 +1,6 @@
 import numpy as np
+import pandas as pd
+from copy import deepcopy
 from dataclasses import dataclass, fields, astuple
 from scipy.optimize import minimize, differential_evolution
 from pydmc.dmcsim import DmcSim, DmcParameters
@@ -78,7 +80,7 @@ class DmcFit:
             **kwargs,
         )
 
-    def summary(self):
+    def print_summary(self):
         """Print summary of DmcFit."""
         print(
             f"amp:{self.res_th.prms.amp:4.1f}",
@@ -92,12 +94,44 @@ class DmcFit:
             f"| cost={self.cost_value:.2f}",
         )
 
+    def table_summary(self):
+        """Table summary."""
+        return pd.DataFrame(
+            [
+                [
+                    self.res_th.prms.amp,
+                    self.res_th.prms.tau,
+                    self.res_th.prms.drc,
+                    self.res_th.prms.bnds,
+                    self.res_th.prms.res_mean,
+                    self.res_th.prms.res_sd,
+                    self.res_th.prms.aa_shape,
+                    self.res_th.prms.sp_shape,
+                    self.res_th.prms.sigma,
+                    self.cost_value,
+                ]
+            ],
+            columns=[
+                "amp",
+                "tau",
+                "drc",
+                "bnds",
+                "res_mean",
+                "res_sd",
+                "aa_shape",
+                "sp_shape",
+                "sigma",
+                "cost",
+            ],
+            index=None,
+        )
+
     def _function_to_minimise(self, x):
 
         self._update_parameters(x)
         self.res_th.run_simulation()
         self.cost_value = self.cost_function(self.res_th, self.res_ob)
-        self.summary()
+        self.print_summary()
 
         return self.cost_value
 
@@ -203,3 +237,39 @@ class DmcFit:
     def plot_delta(self, **kwargs):
         """Plot delta."""
         DmcPlotFit(self.res_th, self.res_ob).plot_delta(**kwargs)
+
+
+class DmcFitSubjects:
+    def __init__(self, res_ob, **kwargs):
+        self.res_ob = res_ob
+        self.subjects = np.unique(res_ob.summary_subject.Subject)
+        self.fits = self._split_subjects()
+
+    def _split_subjects(self, **kwargs):
+        return [
+            deepcopy(DmcFit(self.res_ob.select_subject(s), **kwargs))
+            for s in self.subjects
+        ]
+
+    def fit_data_neldermead(self, **kwargs):
+        """Fit data using neldermead."""
+        [f.fit_data_neldermead(**kwargs) for f in self.fits]
+
+    def fit_data_differential_evolution(self, **kwargs):
+        """Fit data using differential evolution."""
+        [f.fit_data_differential_evolution(**kwargs) for f in self.fits]
+
+    def print_summary(self):
+        """Print summary of individual fits."""
+        for idx, f in enumerate(self.fits):
+            print(f"Subject: {idx+1}\t")
+            f.print_summary()
+
+    def table_summary(self):
+        """Combine tables of individual fits."""
+        tables = []
+        for idx, f in enumerate(self.fits):
+            tmp_table = f.table_summary()
+            tmp_table.insert(0, "Subject", idx + 1)
+            tables.append(tmp_table)
+        return pd.concat(tables)

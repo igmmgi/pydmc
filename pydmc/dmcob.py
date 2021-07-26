@@ -147,20 +147,38 @@ class DmcOb:
 
     def _aggregate_subjects(self):
         def aggfun(x):
-            new_cols = [
-                [
-                    len(x["Subject"]),
-                    np.nanmean(x["rt_cor"]),
-                    np.nanstd(x["rt_cor"], ddof=1),
-                    np.nanstd(x["rt_cor"], ddof=1) / np.sqrt(x["Subject"].count()),
-                    np.nanmean(x["rt_err"]),
-                    np.nanstd(x["rt_err"], ddof=1),
-                    np.nanstd(x["rt_err"], ddof=1) / np.sqrt(x["Subject"].count()),
-                    np.mean(x["per_err"]),
-                    np.nanstd(x["per_err"], ddof=1),
-                    np.nanstd(x["per_err"], ddof=1) / np.sqrt(x["Subject"].count()),
+            n_subjects = len(x["Subject"])
+            if n_subjects == 1:
+                new_cols = [
+                    [
+                        n_subjects,
+                        np.nanmean(x["rt_cor"]),
+                        np.nan,
+                        np.nan,
+                        np.nanmean(x["rt_err"]),
+                        np.nan,
+                        np.nan,
+                        np.nanmean(x["per_err"]),
+                        np.nan,
+                        np.nan,
+                    ]
                 ]
-            ]
+            else:
+                new_cols = [
+                    [
+                        n_subjects,
+                        np.nanmean(x["rt_cor"]),
+                        np.nanstd(x["rt_cor"], ddof=1),
+                        np.nanstd(x["rt_cor"], ddof=1) / np.sqrt(x["Subject"].count()),
+                        np.nanmean(x["rt_err"]),
+                        np.nanstd(x["rt_err"], ddof=1),
+                        np.nanstd(x["rt_err"], ddof=1) / np.sqrt(x["Subject"].count()),
+                        np.mean(x["per_err"]),
+                        np.nanstd(x["per_err"], ddof=1),
+                        np.nanstd(x["per_err"], ddof=1) / np.sqrt(x["Subject"].count()),
+                    ]
+                ]
+
             dat_agg = pd.DataFrame(
                 new_cols,
                 columns=[
@@ -325,3 +343,8 @@ class DmcOb:
     def plot_delta(self, **kwargs):
         """Plot delta."""
         DmcPlot(self).plot_delta(**kwargs)
+
+    def select_subject(self, subject, **kwargs):
+        """Select subject"""
+        subject_data = self.data[self.data.Subject == subject]
+        return DmcOb(subject_data, **kwargs)
