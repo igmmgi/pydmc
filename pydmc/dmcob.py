@@ -344,7 +344,7 @@ class DmcOb:
         """Plot delta."""
         DmcPlot(self).plot_delta(**kwargs)
 
-    def select_subject(self, subject, **kwargs):
+    def select_subject(self, subject):
         """Select subject"""
         subject_data = self.data[self.data.Subject == subject]
-        return DmcOb(subject_data, **kwargs)
+        return DmcOb(subject_data)

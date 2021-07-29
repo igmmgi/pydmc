@@ -25,14 +25,14 @@ class DmcFit:
         self,
         res_ob,
         n_trls=100000,
-        start_vals=DmcParameters(var_sp=True),
+        start_vals=DmcParameters(sp_dist=1),
         bound_vals=DmcParameterBounds(),
         n_delta=19,
         p_delta=None,
         t_delta=1,
         n_caf=5,
         cost_function="RMSE",
-        var_sp=True,
+        sp_dist=1,
     ):
         self.res_ob = res_ob
         self.res_th = None
@@ -46,7 +46,7 @@ class DmcFit:
         self.p_delta = p_delta
         self.t_delta = t_delta
         self.n_caf = n_caf
-        self.var_sp = var_sp
+        self.sp_dist = sp_dist
         self.cost_function = self._assign_cost_function(cost_function)
         self.cost_value = np.Inf
 
@@ -146,8 +146,8 @@ class DmcFit:
         self.res_th.prms.aa_shape = x[6]
         self.res_th.prms.sp_shape = x[7]
         self.res_th.prms.sigma = x[8]
+        self.res_th.prms.sp_dist = 1
         self.res_th.prms.sp_lim = (-x[3], x[3])
-        self.res_th.prms.var_sp = True
 
     @staticmethod
     def calculate_cost_value_rmse(res_th, res_ob):
@@ -240,14 +240,14 @@ class DmcFit:
 
 
 class DmcFitSubjects:
-    def __init__(self, res_ob, **kwargs):
+    def __init__(self, res_ob):
         self.res_ob = res_ob
         self.subjects = np.unique(res_ob.summary_subject.Subject)
         self.fits = self._split_subjects()
 
-    def _split_subjects(self, **kwargs):
+    def _split_subjects(self):
         return [
-            deepcopy(DmcFit(self.res_ob.select_subject(s), **kwargs))
+            deepcopy(DmcFit(self.res_ob.select_subject(s)))
             for s in self.subjects
         ]
 

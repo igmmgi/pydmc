@@ -25,6 +25,8 @@ class DmcParameters:
         drift rate of controlled processes
     bnds: int/float, optional
         +- response barrier
+    res_dist: int, optional
+        non-decisional component distribution (1=normal, 2=uniform)
     res_mean: int/float, optional
         mean of non-decisional component
     res_sd: int/float, optional
@@ -37,36 +39,34 @@ class DmcParameters:
         diffusion constant
     t_max: int, optional
         number of time points per trial
-    var_sp: bool, optional
-        variable starting point
-    var_dr: bool, optional
-        variable drift rate
+    sp_dist: int, optional
+        starting point distribution (0 = constant, 1 = beta, 2 = uniform)
     sp_lim: tuple, optional
         limiit range of distribution of starting point
+    dr_dist: int, optional
+        drift rate distribution (0 = constant, 1 = beta, 2 = uniform)
     dr_lim: tuple, optional
         limit range of distribution of drift rate
     dr_shape: int, optional
         shape parameter of drift rate
-    res_dist: int, optional
-        non-decisional component distribution (1=normal, 2=uniform)
     """
 
     amp: float = 20
     tau: float = 30
     drc: float = 0.5
     bnds: float = 75
+    res_dist: int = 1
     res_mean: float = 300
     res_sd: float = 30
     aa_shape: float = 2
     sp_shape: float = 3
     sigma: float = 4
     t_max: int = 1000
-    var_sp: bool = False
-    var_dr: bool = False
+    sp_dist: int = 0
     sp_lim: tuple = (-75, 75)
+    dr_dist: int = 0
     dr_lim: tuple = (0.1, 0.7)
     dr_shape: float = 3
-    res_dist: int = 1
 
 
 class DmcSim:
@@ -124,9 +124,9 @@ class DmcSim:
         >>> dmc_sim.plot()      # Fig 4
         >>> dmc_sim = DmcSim(DmcParameters(tau = 90))
         >>> dmc_sim.plot()      # Fig 5
-        >>> dmc_sim = DmcSim(DmcParameters(var_sp = True))
+        >>> dmc_sim = DmcSim(DmcParameters(sp_dist = 1))
         >>> dmc_sim.plot()      # Fig 6
-        >>> dmc_sim = DmcSim(DmcParameters(var_dr = True))
+        >>> dmc_sim = DmcSim(DmcParameters(dr_dist = 1))
         >>> dmc_sim.plot()      # Fig 7
         """
 
@@ -341,18 +341,30 @@ class DmcSim:
         return np.random.beta(shape, shape, n_trls) * (lim[1] - lim[0]) + lim[0]
 
     def _dr(self):
-        if self.prms.var_dr:
+        if self.prms.dr_dist == 0:
+            # constant between trial drift rate
+            return np.ones(self.n_trls) * self.prms.drc
+        if self.prms.dr_dist == 1:
+            # between trial variablity in drift rate from beta distribution
             return self.rand_beta(self.prms.dr_lim, self.prms.dr_shape, self.n_trls)
-        return np.ones(self.n_trls) * self.prms.drc
+        if self.prms.dr_dist == 2:
+            # between trial variablity in drift rate from uniform
+            return np.random.uniform(self.prms.dr_lim[0], self.prms.dr_lim[1], self.n_trls)
 
     def _sp(self):
-        if self.prms.var_sp:
+        if self.prms.sp_dist == 0:
+            # constant between trial starting point
+            return np.zeros(self.n_trls)
+        if self.prms.sp_dist == 1:
+            # between trial variablity in starting point from beta distribution
             return self.rand_beta(
                 (self.prms.sp_lim[0], self.prms.sp_lim[1]),
                 self.prms.sp_shape,
                 self.n_trls,
             )
-        return np.zeros(self.n_trls)
+        if self.prms.sp_dist == 2:
+            # between trial variablity in starting point from uniform distribution
+            return np.random.uniform(self.prms.sp_lim[0], self.prms.sp_lim[1], self.n_trls)
 
     def plot(self, **kwargs):
         """Plot."""
