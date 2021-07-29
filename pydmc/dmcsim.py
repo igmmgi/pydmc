@@ -35,6 +35,8 @@ class DmcParameters:
         shape parameter of automatic activation
     sp_shape: int/float, optional
         shape parameter of starting point distribution
+    sp_biad: int/float, optional
+        starting point bias
     sigma: int/float, optional
         diffusion constant
     t_max: int, optional
@@ -64,6 +66,7 @@ class DmcParameters:
     t_max: int = 1000
     sp_dist: int = 0
     sp_lim: tuple = (-75, 75)
+    sp_bias: float = 0.0
     dr_dist: int = 0
     dr_lim: tuple = (0.1, 0.7)
     dr_shape: float = 3
@@ -349,22 +352,30 @@ class DmcSim:
             return self.rand_beta(self.prms.dr_lim, self.prms.dr_shape, self.n_trls)
         if self.prms.dr_dist == 2:
             # between trial variablity in drift rate from uniform
-            return np.random.uniform(self.prms.dr_lim[0], self.prms.dr_lim[1], self.n_trls)
+            return np.random.uniform(
+                self.prms.dr_lim[0], self.prms.dr_lim[1], self.n_trls
+            )
 
     def _sp(self):
         if self.prms.sp_dist == 0:
             # constant between trial starting point
-            return np.zeros(self.n_trls)
+            return np.zeros(self.n_trls) + self.prms.sp_bias
         if self.prms.sp_dist == 1:
             # between trial variablity in starting point from beta distribution
-            return self.rand_beta(
-                (self.prms.sp_lim[0], self.prms.sp_lim[1]),
-                self.prms.sp_shape,
-                self.n_trls,
+            return (
+                self.rand_beta(
+                    (self.prms.sp_lim[0], self.prms.sp_lim[1]),
+                    self.prms.sp_shape,
+                    self.n_trls,
+                )
+                + self.prms.sp_bias
             )
         if self.prms.sp_dist == 2:
             # between trial variablity in starting point from uniform distribution
-            return np.random.uniform(self.prms.sp_lim[0], self.prms.sp_lim[1], self.n_trls)
+            return (
+                np.random.uniform(self.prms.sp_lim[0], self.prms.sp_lim[1], self.n_trls)
+                + self.prms.sp_bias
+            )
 
     def plot(self, **kwargs):
         """Plot."""
