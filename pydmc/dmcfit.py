@@ -3,12 +3,12 @@ import pandas as pd
 from copy import deepcopy
 from dataclasses import dataclass, fields, astuple
 from scipy.optimize import minimize, differential_evolution
-from pydmc.dmcsim import DmcSim, DmcParameters
-from pydmc.dmcplot import DmcPlotFit
+from pydmc.dmcsim import Sim, Prms
+from pydmc.dmcplot import PlotFit
 
 
 @dataclass
-class DmcParameterBounds:
+class PrmsBounds:
     amp: tuple = (0, 40)
     tau: tuple = (5, 300)
     drc: tuple = (0.1, 1.0)
@@ -20,13 +20,13 @@ class DmcParameterBounds:
     sigma: tuple = (4, 4)
 
 
-class DmcFit:
+class Fit:
     def __init__(
         self,
         res_ob,
         n_trls=100000,
-        start_vals=DmcParameters(sp_dist=1),
-        bound_vals=DmcParameterBounds(),
+        start_vals=Prms(sp_dist=1),
+        bound_vals=PrmsBounds(),
         n_delta=19,
         p_delta=None,
         t_delta=1,
@@ -62,7 +62,11 @@ class DmcFit:
             raise Exception("cost function not implemented!")
 
     def fit_data_neldermead(self, **kwargs):
-        self.res_th = DmcSim(self.start_vals)
+#        print(self.start_vals)
+        tmp = [getattr(self.start_vals, f.name) for f in fields(self.start_vals)][:9]
+        print(tmp)
+
+        self.res_th = Sim(self.start_vals)
         kwargs.setdefault("maxiter", 500)
         self.fit = minimize(
             self._function_to_minimise,
@@ -73,7 +77,7 @@ class DmcFit:
         )
 
     def fit_data_differential_evolution(self, **kwargs):
-        self.res_th = DmcSim(self.start_vals)
+        self.res_th = Sim(self.start_vals)
         self.fit = differential_evolution(
             self._function_to_minimise,
             astuple(self.bound_vals),
@@ -212,34 +216,34 @@ class DmcFit:
 
     def plot(self, **kwargs):
         """Plot."""
-        DmcPlotFit(self.res_th, self.res_ob).plot(**kwargs)
+        PlotFit(self.res_th, self.res_ob).plot(**kwargs)
 
     def plot_rt_correct(self, **kwargs):
         """Plot reaction time correct."""
-        DmcPlotFit(self.res_th, self.res_ob).plot_rt_correct(**kwargs)
+        PlotFit(self.res_th, self.res_ob).plot_rt_correct(**kwargs)
 
     def plot_er(self, **kwargs):
         """Plot erorr rate."""
-        DmcPlotFit(self.res_th, self.res_ob).plot_er(**kwargs)
+        PlotFit(self.res_th, self.res_ob).plot_er(**kwargs)
 
     def plot_rt_error(self, **kwargs):
         """Plot reaction time errors."""
-        DmcPlotFit(self.res_th, self.res_ob).plot_rt_error(**kwargs)
+        PlotFit(self.res_th, self.res_ob).plot_rt_error(**kwargs)
 
     def plot_cdf(self, **kwargs):
         """Plot CDF."""
-        DmcPlotFit(self.res_th, self.res_ob).plot_cdf(**kwargs)
+        PlotFit(self.res_th, self.res_ob).plot_cdf(**kwargs)
 
     def plot_caf(self, **kwargs):
         """Plot CAF."""
-        DmcPlotFit(self.res_th, self.res_ob).plot_caf(**kwargs)
+        PlotFit(self.res_th, self.res_ob).plot_caf(**kwargs)
 
     def plot_delta(self, **kwargs):
         """Plot delta."""
-        DmcPlotFit(self.res_th, self.res_ob).plot_delta(**kwargs)
+        PlotFit(self.res_th, self.res_ob).plot_delta(**kwargs)
 
 
-class DmcFitSubjects:
+class FitSubjects:
     def __init__(self, res_ob):
         self.res_ob = res_ob
         self.subjects = np.unique(res_ob.summary_subject.Subject)
@@ -247,7 +251,7 @@ class DmcFitSubjects:
 
     def _split_subjects(self):
         return [
-            deepcopy(DmcFit(self.res_ob.select_subject(s)))
+            deepcopy(Fit(self.res_ob.select_subject(s)))
             for s in self.subjects
         ]
 

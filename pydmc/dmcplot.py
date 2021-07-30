@@ -4,7 +4,7 @@ import numpy as np
 from fastkde import fastKDE
 
 
-class DmcPlot:
+class Plot:
     def __init__(self, res):
         self.res = res
 
@@ -438,7 +438,7 @@ class DmcPlot:
             plt.show(block=False)
 
 
-class DmcPlotFit:
+class PlotFit:
     def __init__(self, res_th, res_ob):
         self.res_th = res_th
         self.res_ob = res_ob

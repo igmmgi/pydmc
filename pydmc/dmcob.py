@@ -3,7 +3,7 @@ import pkg_resources
 import pandas as pd
 import numpy as np
 from scipy.stats.mstats import mquantiles
-from pydmc.dmcplot import DmcPlot
+from pydmc.dmcplot import Plot
 
 
 def flanker_data():
@@ -18,7 +18,7 @@ def simon_data():
     return pd.read_csv(datafile, sep="\t")
 
 
-class DmcOb:
+class Ob:
     def __init__(
         self,
         data,
@@ -318,33 +318,33 @@ class DmcOb:
 
     def plot(self, **kwargs):
         """Plot."""
-        DmcPlot(self).plot(**kwargs)
+        Plot(self).plot(**kwargs)
 
     def plot_rt_correct(self, **kwargs):
         """Plot rt correct."""
-        DmcPlot(self).plot_rt_correct(**kwargs)
+        Plot(self).plot_rt_correct(**kwargs)
 
     def plot_er(self, **kwargs):
         """Plot error rate."""
-        DmcPlot(self).plot_er(**kwargs)
+        Plot(self).plot_er(**kwargs)
 
     def plot_rt_error(self, **kwargs):
         """Plot rt errors."""
-        DmcPlot(self).plot_rt_error(**kwargs)
+        Plot(self).plot_rt_error(**kwargs)
 
     def plot_cdf(self, **kwargs):
         """Plot cdf."""
-        DmcPlot(self).plot_cdf(**kwargs)
+        Plot(self).plot_cdf(**kwargs)
 
     def plot_caf(self, **kwargs):
         """Plot caf."""
-        DmcPlot(self).plot_caf(**kwargs)
+        Plot(self).plot_caf(**kwargs)
 
     def plot_delta(self, **kwargs):
         """Plot delta."""
-        DmcPlot(self).plot_delta(**kwargs)
+        Plot(self).plot_delta(**kwargs)
 
     def select_subject(self, subject):
         """Select subject"""
         subject_data = self.data[self.data.Subject == subject]
-        return DmcOb(subject_data)
+        return Ob(subject_data)

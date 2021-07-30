@@ -9,11 +9,11 @@ import pandas as pd
 from dataclasses import dataclass
 from numba import jit, prange
 from scipy.stats.mstats import mquantiles
-from pydmc.dmcplot import DmcPlot
+from pydmc.dmcplot import Plot
 
 
 @dataclass
-class DmcParameters:
+class Prms:
     """
     DMC Parameters
     ----------
@@ -25,8 +25,6 @@ class DmcParameters:
         drift rate of controlled processes
     bnds: int/float, optional
         +- response barrier
-    res_dist: int, optional
-        non-decisional component distribution (1=normal, 2=uniform)
     res_mean: int/float, optional
         mean of non-decisional component
     res_sd: int/float, optional
@@ -39,6 +37,8 @@ class DmcParameters:
         starting point bias
     sigma: int/float, optional
         diffusion constant
+    res_dist: int, optional
+        non-decisional component distribution (1=normal, 2=uniform)
     t_max: int, optional
         number of time points per trial
     sp_dist: int, optional
@@ -57,12 +57,12 @@ class DmcParameters:
     tau: float = 30
     drc: float = 0.5
     bnds: float = 75
-    res_dist: int = 1
     res_mean: float = 300
     res_sd: float = 30
     aa_shape: float = 2
     sp_shape: float = 3
     sigma: float = 4
+    res_dist: int = 1
     t_max: int = 1000
     sp_dist: int = 0
     sp_lim: tuple = (-75, 75)
@@ -72,12 +72,12 @@ class DmcParameters:
     dr_shape: float = 3
 
 
-class DmcSim:
+class Sim:
     """DMC Simulation."""
 
     def __init__(
         self,
-        prms=DmcParameters(),
+        prms=Prms(),
         n_trls=100000,
         n_caf=5,
         n_delta=19,
@@ -118,18 +118,18 @@ class DmcSim:
 
         Examples
         --------
-        >>> from pydmc.dmcsim import DmcSim, DmcParameters
-        >>> dmc_sim = DmcSim(full_data=True)
+        >>> import pydmc
+        >>> dmc_sim = pydmc.Sim(full_data=True)
         >>> dmc_sim.plot()      # Fig 3
-        >>> dmc_sim = DmcSim()
+        >>> dmc_sim = pydmc.Sim()
         >>> dmc_sim.plot()      # Fig 3 (part)
-        >>> dmc_sim = DmcSim(DmcParameters(tau = 150))
+        >>> dmc_sim = pydmc.Sim(pydmc.Prms(tau = 150))
         >>> dmc_sim.plot()      # Fig 4
-        >>> dmc_sim = DmcSim(DmcParameters(tau = 90))
+        >>> dmc_sim = pydmc.Sim(pydmc.Prms(tau = 90))
         >>> dmc_sim.plot()      # Fig 5
-        >>> dmc_sim = DmcSim(DmcParameters(sp_dist = 1))
+        >>> dmc_sim = pydmc.Sim(pydmc.Prms(sp_dist = 1))
         >>> dmc_sim.plot()      # Fig 6
-        >>> dmc_sim = DmcSim(DmcParameters(dr_dist = 1))
+        >>> dmc_sim = pydmc.Sim(pydmc.Prms(dr_dist = 1))
         >>> dmc_sim.plot()      # Fig 7
         """
 
@@ -379,43 +379,43 @@ class DmcSim:
 
     def plot(self, **kwargs):
         """Plot."""
-        DmcPlot(self).plot(**kwargs)
+        Plot(self).plot(**kwargs)
 
     def plot_activation(self, **kwargs):
         """Plot activation."""
-        DmcPlot(self).plot_activation(**kwargs)
+        Plot(self).plot_activation(**kwargs)
 
     def plot_trials(self, **kwargs):
         """Plot trials."""
-        DmcPlot(self).plot_trials(**kwargs)
+        Plot(self).plot_trials(**kwargs)
 
     def plot_pdf(self, **kwargs):
         """Plot pdf."""
-        DmcPlot(self).plot_pdf(**kwargs)
+        Plot(self).plot_pdf(**kwargs)
 
     def plot_cdf(self, **kwargs):
         """Plot cdf."""
-        DmcPlot(self).plot_cdf(**kwargs)
+        Plot(self).plot_cdf(**kwargs)
 
     def plot_caf(self, **kwargs):
         """Plot caf."""
-        DmcPlot(self).plot_caf(**kwargs)
+        Plot(self).plot_caf(**kwargs)
 
     def plot_delta(self, **kwargs):
         """Plot delta."""
-        DmcPlot(self).plot_delta(**kwargs)
+        Plot(self).plot_delta(**kwargs)
 
     def plot_rt_correct(self, **kwargs):
         """Plot rt correct."""
-        DmcPlot(self).plot_rt_correct(**kwargs)
+        Plot(self).plot_rt_correct(**kwargs)
 
     def plot_er(self, **kwargs):
         """Plot er."""
-        DmcPlot(self).plot_er(**kwargs)
+        Plot(self).plot_er(**kwargs)
 
     def plot_rt_error(self, **kwargs):
         """Plot rt error."""
-        DmcPlot(self).plot_rt_error(**kwargs)
+        Plot(self).plot_rt_error(**kwargs)
 
 
 @jit(nopython=True, parallel=True)
