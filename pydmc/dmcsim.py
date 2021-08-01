@@ -264,15 +264,22 @@ class Sim:
                 np.percentile(x.loc[:, "RT"], np.linspace(0, 100, n + 1)),
             )
             x = x.assign(bin=cafbin)
-
             return pd.DataFrame((1 - x.groupby(["bin"])["Error"].mean())[:-1])
 
         # create temp pandas dataframe
         dfc = pd.DataFrame(self.dat[0].T, columns=["RT", "Error"]).assign(Comp="comp")
         dfi = pd.DataFrame(self.dat[1].T, columns=["RT", "Error"]).assign(Comp="incomp")
-        df = pd.concat([dfc, dfi])
 
-        self.caf = df.groupby(["Comp"]).apply(caffun, self.n_caf).reset_index()
+        self.caf = (
+            pd.concat([dfc, dfi])
+            .groupby(["Comp"])
+            .apply(caffun, self.n_caf)
+            .reset_index()
+            .pivot(index="bin", columns="Comp", values="Error")
+            .reset_index()
+            .rename_axis(None, axis=1)
+            .assign(effect=lambda x: (x["comp"] - x["incomp"]) * 100)
+        )
 
     def _calc_delta_values(self):
         """Calculate compatibility effect + delta values for correct trials."""
@@ -404,6 +411,10 @@ class Sim:
     def plot_delta(self, **kwargs):
         """Plot delta."""
         Plot(self).plot_delta(**kwargs)
+
+    def plot_delta_errors(self, **kwargs):
+        """Plot delta."""
+        Plot(self).plot_delta_errors(**kwargs)
 
     def plot_rt_correct(self, **kwargs):
         """Plot rt correct."""

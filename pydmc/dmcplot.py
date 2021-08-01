@@ -331,8 +331,8 @@ class Plot:
         l_kws = _filter_dict(kwargs, plt.Line2D)
         for idx, comp in enumerate(("comp", "incomp")):
             plt.plot(
-                self.res.caf["bin"][self.res.caf["Comp"] == comp],
-                self.res.caf["Error"][self.res.caf["Comp"] == comp],
+                self.res.caf["bin"],
+                self.res.caf[comp],
                 color=colors[idx],
                 label=cond_labels[idx],
                 **l_kws,
@@ -372,12 +372,41 @@ class Plot:
         kwargs.setdefault("xlim", [np.min(datx) - 100, np.max(datx) + 100])
         kwargs.setdefault("ylim", [np.min(daty) - 25, np.max(daty) + 25])
         kwargs.setdefault("xlabel", "Time (ms)")
-        kwargs.setdefault("ylabel", r"$\Delta$")
+        kwargs.setdefault("ylabel", r"$\Delta$ RT [ms]")
 
         _adjust_plt(**kwargs)
 
         if show:
             plt.show(block=False)
+
+    def plot_delta_errors(self, show=True, **kwargs):
+        """Plot error rate delta plots."""
+
+        if show:
+            plt.figure(len(plt.get_fignums()) + 1)
+
+        kwargs.setdefault("color", "black")
+        kwargs.setdefault("marker", "o")
+        kwargs.setdefault("markersize", 4)
+
+        datx, daty = self.res.caf["bin"], self.res.caf["effect"]
+
+        l_kws = _filter_dict(kwargs, plt.Line2D)
+        plt.plot(datx, daty, **l_kws)
+
+        plt.xticks(
+            range(1, self.res.n_caf + 1), [str(x) for x in range(1, self.res.n_caf + 1)]
+        )
+
+        kwargs.setdefault("ylim", [np.min(daty) - 5, np.max(daty) + 5])
+        kwargs.setdefault("xlabel", "Bin")
+        kwargs.setdefault("ylabel", r"$\Delta$ ER [%]")
+
+        _adjust_plt(**kwargs)
+
+        if show:
+            plt.show(block=False)
+
 
     def plot_rt_correct(
         self, show=True, cond_labels=("Compatible", "Incompatible"), **kwargs
