@@ -372,7 +372,7 @@ class Plot:
         kwargs.setdefault("xlim", [np.min(datx) - 100, np.max(datx) + 100])
         kwargs.setdefault("ylim", [np.min(daty) - 25, np.max(daty) + 25])
         kwargs.setdefault("xlabel", "Time (ms)")
-        kwargs.setdefault("ylabel", r"$\Delta$ RT [ms]")
+        kwargs.setdefault("ylabel", r"$\Delta$  RT [ms]")
 
         _adjust_plt(**kwargs)
 
@@ -399,8 +399,8 @@ class Plot:
         )
 
         kwargs.setdefault("ylim", [np.min(daty) - 5, np.max(daty) + 5])
-        kwargs.setdefault("xlabel", "Bin")
-        kwargs.setdefault("ylabel", r"$\Delta$ ER [%]")
+        kwargs.setdefault("xlabel", "RT Bin")
+        kwargs.setdefault("ylabel", r"$\Delta$  ER [%]")
 
         _adjust_plt(**kwargs)
 

@@ -211,23 +211,20 @@ class Ob:
                 np.percentile(x.loc[:, "RT"], np.linspace(0, 100, n + 1)),
             )
             x = x.assign(bin=cafbin)
-
             return pd.DataFrame((1 - x.groupby(["bin"])["Error"].mean())[:-1])
 
         self.caf_subject = (
             self.data.groupby(["Subject", "Comp"])
             .apply(caffun, self.n_caf)
             .reset_index()
+            .pivot(index=("Subject", "bin"), columns="Comp", values="Error")
+            .reset_index()
+            .rename_axis(None, axis=1)
+            .assign(effect=lambda x: (x["comp"] - x["incomp"]) * 100)
         )
 
-        def aggfun(x):
-            return pd.DataFrame([np.nanmean(x["Error"])], columns=["Error"])
-
         self.caf = (
-            self.caf_subject.groupby(["Comp", "bin"])
-            .apply(aggfun)
-            .reset_index()
-            .drop("level_2", axis=1)
+            self.caf_subject.groupby("bin").mean().reset_index().drop("Subject", axis=1)
         )
 
     def _calc_delta_values(self):
@@ -343,6 +340,10 @@ class Ob:
     def plot_delta(self, **kwargs):
         """Plot delta."""
         Plot(self).plot_delta(**kwargs)
+
+    def plot_delta_errors(self, **kwargs):
+        """Plot delta."""
+        Plot(self).plot_delta_errors(**kwargs)
 
     def select_subject(self, subject):
         """Select subject"""
