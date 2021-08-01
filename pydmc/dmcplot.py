@@ -407,7 +407,6 @@ class Plot:
         if show:
             plt.show(block=False)
 
-
     def plot_rt_correct(
         self, show=True, cond_labels=("Compatible", "Incompatible"), **kwargs
     ):
@@ -721,8 +720,8 @@ class PlotFit:
         l_kws = _filter_dict(kwargs, plt.Line2D)
         for idx, comp in enumerate(("comp", "incomp")):
             plt.plot(
-                self.res_ob.caf["bin"][self.res_ob.caf["Comp"] == comp],
-                self.res_ob.caf["Error"][self.res_ob.caf["Comp"] == comp],
+                self.res_ob.caf["bin"],
+                self.res_ob.caf[comp],
                 color=colors[idx],
                 label=legend_labels[idx],
                 **l_kws,
@@ -733,8 +732,8 @@ class PlotFit:
         l_kws = _filter_dict(kwargs, plt.Line2D)
         for idx, comp in enumerate(("comp", "incomp")):
             plt.plot(
-                self.res_th.caf["bin"][self.res_th.caf["Comp"] == comp],
-                self.res_th.caf["Error"][self.res_th.caf["Comp"] == comp],
+                self.res_th.caf["bin"],
+                self.res_th.caf[comp],
                 color=colors[idx],
                 label=legend_labels[idx + 2],
                 **l_kws,
@@ -767,7 +766,7 @@ class PlotFit:
         kwargs.setdefault("markersize", 4)
         kwargs.setdefault("linestyle", "None")
         kwargs.setdefault("xlabel", "Time (ms)")
-        kwargs.setdefault("xlabel", r"$\Delta$")
+        kwargs.setdefault("ylabel", r"$\Delta$ RT [ms]")
 
         l_kws = _filter_dict(kwargs, plt.Line2D)
         plt.plot(
@@ -802,6 +801,59 @@ class PlotFit:
             ],
         )
 
+        _adjust_plt(**kwargs)
+
+        if legend_position:
+            plt.legend(loc=legend_position)
+
+        if show:
+            plt.show(block=False)
+
+    def plot_delta_errors(
+        self,
+        show=True,
+        legend_labels=("Observed", "Predicted"),
+        legend_position="upper right",
+        **kwargs,
+    ):
+        """Plot error-rate delta plots."""
+        kwargs.setdefault("color", "black")
+        kwargs.setdefault("marker", "o")
+        kwargs.setdefault("markersize", 4)
+        kwargs.setdefault("linestyle", "None")
+        kwargs.setdefault("xlabel", "RT Bin")
+        kwargs.setdefault("ylabel", r"$\Delta$  ER [%]")
+
+        l_kws = _filter_dict(kwargs, plt.Line2D)
+        plt.plot(
+            self.res_ob.caf["bin"],
+            self.res_ob.caf["effect"],
+            label=legend_labels[0],
+            **l_kws,
+        )
+
+        kwargs["linestyle"] = "-"
+        kwargs["marker"] = "None"
+        l_kws = _filter_dict(kwargs, plt.Line2D)
+        plt.plot(
+            self.res_th.caf["bin"],
+            self.res_th.caf["effect"],
+            label=legend_labels[1],
+            **l_kws,
+        )
+
+        kwargs.setdefault(
+            "ylim",
+            [
+                np.min(self.res_ob.caf.effect) - 5,
+                np.max(self.res_ob.caf.effect) + 5,
+            ],
+        )
+
+        plt.xticks(
+            range(1, self.res_th.n_caf + 1),
+            [str(x) for x in range(1, self.res_th.n_caf + 1)],
+        )
         _adjust_plt(**kwargs)
 
         if legend_position:

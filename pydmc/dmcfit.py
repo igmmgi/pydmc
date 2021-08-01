@@ -62,10 +62,6 @@ class Fit:
             raise Exception("cost function not implemented!")
 
     def fit_data_neldermead(self, **kwargs):
-#        print(self.start_vals)
-        tmp = [getattr(self.start_vals, f.name) for f in fields(self.start_vals)][:9]
-        print(tmp)
-
         self.res_th = Sim(self.start_vals)
         kwargs.setdefault("maxiter", 500)
         self.fit = minimize(
@@ -166,10 +162,14 @@ class Fit:
         res_ob
         """
         n_rt = len(res_th.delta) * 2
-        n_err = len(res_th.caf)
+        n_err = len(res_th.caf) * 2
 
         cost_caf = np.sqrt(
-            (1 / n_err) * np.sum((res_th.caf["Error"] - res_ob.caf["Error"]) ** 2)
+            (1 / n_err)
+            * np.sum(
+                np.sum(res_th.caf[["comp", "incomp"]] - res_ob.caf[["comp", "incomp"]])
+                ** 2
+            )
         )
 
         cost_rt = np.sqrt(
@@ -242,6 +242,10 @@ class Fit:
         """Plot delta."""
         PlotFit(self.res_th, self.res_ob).plot_delta(**kwargs)
 
+    def plot_delta_errors(self, **kwargs):
+        """Plot delta errors."""
+        PlotFit(self.res_th, self.res_ob).plot_delta_errors(**kwargs)
+
 
 class FitSubjects:
     def __init__(self, res_ob):
@@ -250,10 +254,7 @@ class FitSubjects:
         self.fits = self._split_subjects()
 
     def _split_subjects(self):
-        return [
-            deepcopy(Fit(self.res_ob.select_subject(s)))
-            for s in self.subjects
-        ]
+        return [deepcopy(Fit(self.res_ob.select_subject(s))) for s in self.subjects]
 
     def fit_data_neldermead(self, **kwargs):
         """Fit data using neldermead."""
