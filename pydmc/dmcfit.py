@@ -1,23 +1,60 @@
 import numpy as np
 import pandas as pd
 from copy import deepcopy
-from dataclasses import dataclass, fields, astuple
+from dataclasses import dataclass, fields, asdict
 from scipy.optimize import minimize, differential_evolution
 from pydmc.dmcsim import Sim, Prms
 from pydmc.dmcplot import PlotFit
 
 
 @dataclass
-class PrmsBounds:
-    amp: tuple = (0, 40)
-    tau: tuple = (5, 300)
-    drc: tuple = (0.1, 1.0)
-    bnds: tuple = (20, 150)
-    res_mean: tuple = (200, 800)
-    res_sd: tuple = (5, 100)
-    aa_shape: tuple = (1, 3)
-    sp_shape: tuple = (2, 4)
-    sigma: tuple = (4, 4)
+class PrmsFit:
+    # start, min, max, fitted
+    amp: tuple = (20, 0, 40, True)
+    tau: tuple = (30, 5, 300, True)
+    drc: tuple = (0.5, 0.1, 1.0, True)
+    bnds: tuple = (75, 20, 150, True)
+    res_mean: tuple = (300, 200, 800, True)
+    res_sd: tuple = (30, 5, 100, True)
+    aa_shape: tuple = (2, 1, 3, True)
+    sp_shape: tuple = (3, 2, 4, True)
+    sigma: tuple = (4, 1, 10, False)
+
+    def set_start_values(self, **kwargs):
+        [setattr(self, k, (v,) + getattr(self, k)[1:]) for k, v in kwargs.items()]
+
+    def set_min_values(self, **kwargs):
+        [
+            setattr(self, k, (getattr(self, k)[0],) + (v,) + getattr(self, k)[2:])
+            for k, v in kwargs.items()
+        ]
+
+    def set_max_values(self, **kwargs):
+        [
+            setattr(self, k, getattr(self, k)[0:2] + (v,) + (getattr(self, k)[3],))
+            for k, v in kwargs.items()
+        ]
+
+    def set_fitted_values(self, **kwargs):
+        [setattr(self, k, getattr(self, k)[0:3] + (v,)) for k, v in kwargs.items()]
+
+    def dmc_prms(self, sp_dist=1):
+        return Prms(
+            **self._dict(0), sp_dist=sp_dist, sp_lim=(-self.bnds[0], self.bnds[1])
+        )
+
+    def _array(self, idx=0):
+        return [
+            getattr(self, f.name)[idx]
+            for f in fields(self)
+            if getattr(self, f.name)[-1]
+        ]
+
+    def _dict(self, idx=0):
+        return {k: v[idx] for k, v in asdict(self).items() if v}
+
+    def _bounds(self):
+        return [x[1:3] for x in asdict(self).values() if x[-1]]
 
 
 class Fit:
@@ -25,33 +62,25 @@ class Fit:
         self,
         res_ob,
         n_trls=100000,
-        start_vals=Prms(sp_dist=1),
-        bound_vals=PrmsBounds(),
+        start_vals=PrmsFit(),
         n_delta=19,
         p_delta=None,
         t_delta=1,
         n_caf=5,
         cost_function="RMSE",
-        sp_dist=1,
     ):
         self.res_ob = res_ob
         self.res_th = None
         self.fit = None
         self.n_trls = n_trls
         self.start_vals = start_vals
-        self.bound_vals = bound_vals
-        self._min_vals = self._fieldvalues(0)
-        self._max_vals = self._fieldvalues(1)
+        self.dmc_prms = start_vals.dmc_prms()
         self.n_delta = n_delta
         self.p_delta = p_delta
         self.t_delta = t_delta
         self.n_caf = n_caf
-        self.sp_dist = sp_dist
         self.cost_function = self._assign_cost_function(cost_function)
         self.cost_value = np.Inf
-
-    def _fieldvalues(self, idx):
-        return [getattr(self.bound_vals, f.name)[idx] for f in fields(self.bound_vals)]
 
     def _assign_cost_function(self, cost_function):
         if cost_function == "RMSE":
@@ -61,22 +90,27 @@ class Fit:
         else:
             raise Exception("cost function not implemented!")
 
+    def _fit_initial_grid(self):
+        pass
+
     def fit_data_neldermead(self, **kwargs):
-        self.res_th = Sim(self.start_vals)
+        self.res_th = Sim(deepcopy(self.dmc_prms))
         kwargs.setdefault("maxiter", 500)
         self.fit = minimize(
             self._function_to_minimise,
-            [getattr(self.start_vals, f.name) for f in fields(self.start_vals)][:9],
-            method="Nelder-Mead",
-            bounds=astuple(self.bound_vals),
+            self.start_vals._array(0),
+            method="nelder-mead",
+            bounds=self.start_vals._bounds(),
             options=kwargs,
         )
 
     def fit_data_differential_evolution(self, **kwargs):
-        self.res_th = Sim(self.start_vals)
+        self.res_th = Sim(deepcopy(self.start_vals.dmc_prms()))
+        kwargs.setdefault("maxiter", 100)
+        kwargs.setdefault("polish", False)
         self.fit = differential_evolution(
             self._function_to_minimise,
-            astuple(self.bound_vals),
+            self.start_vals._bounds(),
             **kwargs,
         )
 
@@ -136,18 +170,12 @@ class Fit:
         return self.cost_value
 
     def _update_parameters(self, x):
-
-        self.res_th.prms.amp = x[0]
-        self.res_th.prms.tau = x[1]
-        self.res_th.prms.drc = x[2]
-        self.res_th.prms.bnds = x[3]
-        self.res_th.prms.res_mean = x[4]
-        self.res_th.prms.res_sd = x[5]
-        self.res_th.prms.aa_shape = x[6]
-        self.res_th.prms.sp_shape = x[7]
-        self.res_th.prms.sigma = x[8]
-        self.res_th.prms.sp_dist = 1
-        self.res_th.prms.sp_lim = (-x[3], x[3])
+        idx = 0
+        for k in asdict(self.start_vals).keys():
+            if getattr(self.start_vals, k)[-1]:
+                setattr(self.res_th.prms, k, x[idx])
+                idx += 1
+        self.res_th.prms.sp_lim = (-self.res_th.prms.bnds, self.res_th.prms.bnds)
 
     @staticmethod
     def calculate_cost_value_rmse(res_th, res_ob):

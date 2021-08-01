@@ -33,7 +33,7 @@ class Prms:
         shape parameter of automatic activation
     sp_shape: int/float, optional
         shape parameter of starting point distribution
-    sp_biad: int/float, optional
+    sp_bias: int/float, optional
         starting point bias
     sigma: int/float, optional
         diffusion constant
@@ -445,7 +445,7 @@ def _run_simulation(
         trl_xt = sp[trl]
         for tp in range(0, t_max):
             trl_xt += drc[tp] + dr[trl] + (sigma * np.random.randn())
-            if np.abs(trl_xt) >= bnds:
+            if np.abs(trl_xt) > bnds:
                 dat[0, trl] = tp + max(0, res_dist[trl])
                 dat[1, trl] = trl_xt < 0.0
                 break
@@ -489,7 +489,7 @@ def _run_simulation_full(
         xt = np.cumsum(xt)
 
         for tp in range(len(xt)):
-            if np.abs(xt[tp]) >= bnds:
+            if np.abs(xt[tp]) > bnds:
                 dat[0, trl] = tp + max(0, res_dist[trl])
                 dat[1, trl] = xt[tp] < 0.0
                 break
