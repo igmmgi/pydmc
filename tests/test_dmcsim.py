@@ -103,19 +103,20 @@ class DMCTestCaseDmcSim(unittest.TestCase):
     # just check plot code runs
     def test_dmcsim7(self):
         dat = pydmc.Sim(pydmc.Prms(tau=30))
+        self.assertTrue(dat, type(dat) == pydmc.Sim)
         try:
-            dat.plot()
-            dat.plot_activation()
-            dat.plot_trials()
-            dat.plot_pdf()
-            dat.plot_cdf()
-            dat.plot_delta()
-            dat.plot_rt_correct()
-            dat.plot_rt_error()
-            dat.plot_er()
-            dat.plot_rt_error()
-        except:
-            self.fail("*.plot() raised ExceptionType!")
+            pydmc.Plot(dat).plot()
+            pydmc.Plot(dat).plot_activation()
+            pydmc.Plot(dat).plot_trials()
+            pydmc.Plot(dat).plot_pdf()
+            pydmc.Plot(dat).plot_cdf()
+            pydmc.Plot(dat).plot_delta()
+            pydmc.Plot(dat).plot_rt_correct()
+            pydmc.Plot(dat).plot_rt_error()
+            pydmc.Plot(dat).plot_er()
+            pydmc.Plot(dat).plot_rt_error()
+        except BaseException as error:
+            print("Error {}".format(error))
 
 
 if __name__ == "__main__":

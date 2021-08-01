@@ -1,11 +1,15 @@
 import inspect
 import matplotlib.pyplot as plt
 import numpy as np
+from typing import Union
 from fastkde import fastKDE
+from pydmc.dmcob import Ob
+from pydmc.dmcsim import Sim
+from pydmc.dmcfit import Fit
 
 
 class Plot:
-    def __init__(self, res):
+    def __init__(self, res: Union[Sim, Ob]):
         self.res = res
 
     def plot(self, **kwargs):
@@ -127,10 +131,10 @@ class Plot:
 
     def plot_activation(
         self,
-        show=True,
-        cond_labels=("Compatible", "Incompatible"),
-        legend_position="best",
-        colors=("green", "red"),
+        show: bool = True,
+        cond_labels: tuple = ("Compatible", "Incompatible"),
+        legend_position: str = "best",
+        colors: tuple = ("green", "red"),
         **kwargs,
     ):
         """Plot activation."""
@@ -170,10 +174,10 @@ class Plot:
 
     def plot_trials(
         self,
-        show=True,
-        cond_labels=("Compatible", "Incompatible"),
-        legend_position="upper right",
-        colors=("green", "red"),
+        show: bool = True,
+        cond_labels: tuple = ("Compatible", "Incompatible"),
+        legend_position: str = "upper right",
+        colors: tuple = ("green", "red"),
         **kwargs,
     ):
         """Plot individual trials."""
@@ -222,10 +226,10 @@ class Plot:
 
     def plot_pdf(
         self,
-        show=True,
-        cond_labels=("Compatible", "Incompatible"),
-        legend_position="upper right",
-        colors=("green", "red"),
+        show: bool = True,
+        cond_labels: tuple = ("Compatible", "Incompatible"),
+        legend_position: str = "upper right",
+        colors: tuple = ("green", "red"),
         **kwargs,
     ):
         """Plot PDF."""
@@ -253,10 +257,10 @@ class Plot:
 
     def plot_cdf(
         self,
-        show=True,
-        cond_labels=("Compatible", "Incompatible"),
-        legend_position="lower right",
-        colors=("green", "red"),
+        show: bool = True,
+        cond_labels: tuple = ("Compatible", "Incompatible"),
+        legend_position: tuple = "lower right",
+        colors: tuple = ("green", "red"),
         **kwargs,
     ):
         """Plot CDF."""
@@ -314,10 +318,10 @@ class Plot:
 
     def plot_caf(
         self,
-        show=True,
-        cond_labels=("Compatible", "Incompatible"),
-        legend_position="lower right",
-        colors=("green", "red"),
+        show: bool = True,
+        cond_labels: tuple = ("Compatible", "Incompatible"),
+        legend_position: str = "lower right",
+        colors: tuple = ("green", "red"),
         **kwargs,
     ):
         """Plot CAF."""
@@ -354,7 +358,7 @@ class Plot:
         if show:
             plt.show(block=False)
 
-    def plot_delta(self, show=True, **kwargs):
+    def plot_delta(self, show: bool = True, **kwargs):
         """Plot reaction-time delta plots."""
 
         if show:
@@ -379,7 +383,7 @@ class Plot:
         if show:
             plt.show(block=False)
 
-    def plot_delta_errors(self, show=True, **kwargs):
+    def plot_delta_errors(self, show: bool = True, **kwargs):
         """Plot error rate delta plots."""
 
         if show:
@@ -408,7 +412,10 @@ class Plot:
             plt.show(block=False)
 
     def plot_rt_correct(
-        self, show=True, cond_labels=("Compatible", "Incompatible"), **kwargs
+        self,
+        show: bool = True,
+        cond_labels: tuple = ("Compatible", "Incompatible"),
+        **kwargs,
     ):
         """Plot correct RT's."""
 
@@ -427,7 +434,12 @@ class Plot:
         if show:
             plt.show(block=False)
 
-    def plot_er(self, show=True, cond_labels=("Compatible", "Incompatible"), **kwargs):
+    def plot_er(
+        self,
+        show: bool = True,
+        cond_labels: tuple = ("Compatible", "Incompatible"),
+        **kwargs,
+    ):
         """Plot error rate"""
 
         if show:
@@ -446,7 +458,10 @@ class Plot:
             plt.show(block=False)
 
     def plot_rt_error(
-        self, show=True, cond_labels=("Compatible", "Incompatible"), **kwargs
+        self,
+        show: bool = True,
+        cond_labels: tuple = ("Compatible", "Incompatible"),
+        **kwargs,
     ):
         """Plot error RT's."""
 
@@ -467,9 +482,9 @@ class Plot:
 
 
 class PlotFit:
-    def __init__(self, res_th, res_ob):
-        self.res_th = res_th
-        self.res_ob = res_ob
+    def __init__(self, res: Fit):
+        self.res_th = res.res_th
+        self.res_ob = res.res_ob
 
     def plot(self, **kwargs):
         """Plot."""
@@ -506,10 +521,10 @@ class PlotFit:
 
     def plot_rt_correct(
         self,
-        show=True,
-        cond_labels=("Compatible", "Incompatible"),
-        legend_labels=("Observed", "Predicted"),
-        legend_position="upper left",
+        show: bool = True,
+        cond_labels: tuple = ("Compatible", "Incompatible"),
+        legend_labels: tuple = ("Observed", "Predicted"),
+        legend_position: str = "upper left",
         **kwargs,
     ):
         """Plot correct RT's."""
@@ -550,10 +565,10 @@ class PlotFit:
 
     def plot_er(
         self,
-        show=True,
-        cond_labels=("Compatible", "Incompatible"),
-        legend_labels=("Observed", "Predicted"),
-        legend_position="upper left",
+        show: bool = True,
+        cond_labels: tuple = ("Compatible", "Incompatible"),
+        legend_labels: tuple = ("Observed", "Predicted"),
+        legend_position: str = "upper left",
         **kwargs,
     ):
         """Plot error rate."""
@@ -594,10 +609,10 @@ class PlotFit:
 
     def plot_rt_error(
         self,
-        show=True,
-        cond_labels=("Compatible", "Incompatible"),
-        legend_labels=("Observed", "Predicted"),
-        legend_position="upper left",
+        show: bool = True,
+        cond_labels: tuple = ("Compatible", "Incompatible"),
+        legend_labels: tuple = ("Observed", "Predicted"),
+        legend_position: str = "upper left",
         **kwargs,
     ):
         """Plot error RT's."""
@@ -638,15 +653,15 @@ class PlotFit:
 
     def plot_cdf(
         self,
-        show=True,
-        legend_labels=(
+        show: bool = True,
+        legend_labels: tuple = (
             "Compatible Observed",
             "Incompatible Observed",
             "Compatible Predicted",
             "Incompatible Predicted",
         ),
-        legend_position="lower right",
-        colors=("green", "red"),
+        legend_position: str = "lower right",
+        colors: tuple = ("green", "red"),
         **kwargs,
     ):
         """Plot CDF."""
@@ -698,15 +713,15 @@ class PlotFit:
 
     def plot_caf(
         self,
-        show=True,
-        legend_labels=(
+        show: bool = True,
+        legend_labels: tuple = (
             "Compatible Observed",
             "Incompatible Observed",
             "Compatible Predicted",
             "Incompatible Predicted",
         ),
-        legend_position="lower right",
-        colors=("green", "red"),
+        legend_position: str = "lower right",
+        colors: tuple = ("green", "red"),
         **kwargs,
     ):
         """Plot CAF."""
@@ -755,9 +770,9 @@ class PlotFit:
 
     def plot_delta(
         self,
-        show=True,
-        legend_labels=("Observed", "Predicted"),
-        legend_position="lower right",
+        show: bool = True,
+        legend_labels: tuple = ("Observed", "Predicted"),
+        legend_position: str = "lower right",
         **kwargs,
     ):
         """Plot reaction-time delta plots."""
@@ -811,9 +826,9 @@ class PlotFit:
 
     def plot_delta_errors(
         self,
-        show=True,
-        legend_labels=("Observed", "Predicted"),
-        legend_position="upper right",
+        show: bool = True,
+        legend_labels: tuple = ("Observed", "Predicted"),
+        legend_position: str = "upper right",
         **kwargs,
     ):
         """Plot error-rate delta plots."""
@@ -863,7 +878,7 @@ class PlotFit:
             plt.show(block=False)
 
 
-def _plot_beh(dat, cond_labels, zeroed, **kwargs):
+def _plot_beh(dat, cond_labels: tuple, zeroed: bool, **kwargs):
     """Internal function to plot rt/er for comp vs. comp"""
 
     kwargs.setdefault("color", "black")

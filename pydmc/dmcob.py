@@ -2,17 +2,17 @@ import glob
 import pkg_resources
 import pandas as pd
 import numpy as np
+from typing import Union
 from scipy.stats.mstats import mquantiles
-from pydmc.dmcplot import Plot
 
 
-def flanker_data():
+def flanker_data() -> pd.DataFrame:
     """Load raw Flanker data from Ulrich et al. (2015)."""
     datafile = pkg_resources.resource_stream(__name__, "data/flankerData.csv")
     return pd.read_csv(datafile, sep="\t")
 
 
-def simon_data():
+def simon_data() -> pd.DataFrame:
     """Load raw Simon task data from Ulrich et al. (2015)."""
     datafile = pkg_resources.resource_stream(__name__, "data/simonData.csv")
     return pd.read_csv(datafile, sep="\t")
@@ -21,17 +21,17 @@ def simon_data():
 class Ob:
     def __init__(
         self,
-        data,
-        n_caf=5,
-        n_delta=19,
-        p_delta=None,
-        t_delta=1,
-        outlier=(200, 1200),
-        columns=("Subject", "Comp", "RT", "Error"),
-        comp_coding=("comp", "incomp"),
-        error_coding=(0, 1),
-        sep="\t",
-        skiprows=0,
+        data: Union[str, pd.DataFrame],
+        n_caf: int = 5,
+        n_delta: int = 19,
+        p_delta: tuple = (),
+        t_delta: int = 1,
+        outlier: tuple = (200, 1200),
+        columns: tuple = ("Subject", "Comp", "RT", "Error"),
+        comp_coding: tuple = ("comp", "incomp"),
+        error_coding: tuple = (0, 1),
+        sep: str = "\t",
+        skiprows: int = 0,
     ):
         """
 
@@ -73,7 +73,7 @@ class Ob:
         self._calc_delta_values()
 
     @staticmethod
-    def read_data_files(data, sep="\t", skiprows=0):
+    def read_data_files(data: str, sep: str = "\t", skiprows: int = 0) -> pd.DataFrame:
         """
         Parameters
         ----------
@@ -91,36 +91,37 @@ class Ob:
             datas.append(pd.read_csv(f, sep=sep, skiprows=skiprows))
         return pd.concat(datas, axis=0, ignore_index=True)
 
-    def _columns(self):
+    def _columns(self) -> None:
         try:
             self.data = self.data[list(self.columns)]
         except KeyError:
             raise Exception("requested columns not in data!")
         if len(self.data.columns) != 4:
             raise Exception("data does not contain required/requested coluumns!")
-        if not any(self.data.columns.values == self.columns):
-            self.data.columns = self.columns
+        if not any(self.data.columns.values == ("Subject", "Comp", "RT", "Error")):
+            self.data.columns = ("Subject", "Comp", "RT", "Error")
 
-    def _comp_coding(self):
+    def _comp_coding(self) -> None:
+        self.data["Comp"] = np.where(self.data["Comp"] == self.comp_coding[0], 0, 1)
         if self.comp_coding != ("comp", "incomp"):
             self.data["Comp"] = np.where(
                 self.data["Comp"] == self.comp_coding[0], "comp", "incomp"
             )
 
-    def _error_coding(self):
+    def _error_coding(self) -> None:
         if self.error_coding != (0, 1):
             self.data["Error"] = np.where(
                 self.data["Error"] == self.error_coding[0], 0, 1
             )
 
-    def _outlier(self):
+    def _outlier(self) -> None:
         self.data["outlier"] = np.where(
             (self.data["RT"] <= self.outlier[0]) | (self.data["RT"] >= self.outlier[1]),
             1,
             0,
         )
 
-    def _aggregate_trials(self):
+    def _aggregate_trials(self) -> None:
         def aggfun(x):
             new_cols = [
                 [
@@ -145,7 +146,7 @@ class Ob:
             self.data.groupby(["Subject", "Comp"]).apply(aggfun).reset_index()
         ).drop("level_2", axis=1)
 
-    def _aggregate_subjects(self):
+    def _aggregate_subjects(self) -> None:
         def aggfun(x):
             n_subjects = len(x["Subject"])
             if n_subjects == 1:
@@ -200,10 +201,10 @@ class Ob:
             self.summary_subject.groupby(["Comp"]).apply(aggfun).reset_index()
         ).drop("level_1", axis=1)
 
-    def _calc_caf_values(self):
+    def _calc_caf_values(self) -> None:
         """Calculate conditional accuracy functions."""
 
-        def caffun(x, n):
+        def caffun(x, n: int) -> pd.DataFrame:
             # remove outliers and bin data
             x = x[x.outlier == 0].reset_index()
             cafbin = np.digitize(
@@ -227,16 +228,17 @@ class Ob:
             self.caf_subject.groupby("bin").mean().reset_index().drop("Subject", axis=1)
         )
 
-    def _calc_delta_values(self):
+    def _calc_delta_values(self) -> None:
         """Calculate compatibility effect + delta values for correct trials."""
 
-        def deltafun(x):
+        # noinspection PyUnboundLocalVariable
+        def deltafun(x: pd.DataFrame) -> pd.DataFrame:
             # filter trials
             x = x[(x.outlier == 0) & (x.Error == 0)].reset_index()
 
             if self.t_delta == 1:
 
-                if self.p_delta is not None:
+                if len(self.p_delta) != 0:
                     percentiles = self.p_delta
                 else:
                     percentiles = np.linspace(0, 1, self.n_delta + 2)[1:-1]
@@ -255,8 +257,8 @@ class Ob:
 
             elif self.t_delta == 2:
 
-                if self.p_delta is not None:
-                    percentiles = [0] + self.p_delta + [1]
+                if len(self.p_delta) != 0:
+                    percentiles = (0,) + self.p_delta + (1,)
                 else:
                     percentiles = np.linspace(0, 1, self.n_delta + 1)
 
@@ -296,7 +298,7 @@ class Ob:
             self.data.groupby(["Subject"]).apply(deltafun).reset_index()
         ).drop("level_1", axis=1)
 
-        def aggfun(x):
+        def aggfun(x: pd.DataFrame) -> pd.DataFrame:
             return pd.DataFrame(
                 [
                     [
@@ -313,39 +315,7 @@ class Ob:
             self.delta_subject.groupby(["bin"]).apply(aggfun).reset_index()
         ).drop("level_1", axis=1)
 
-    def plot(self, **kwargs):
-        """Plot."""
-        Plot(self).plot(**kwargs)
-
-    def plot_rt_correct(self, **kwargs):
-        """Plot rt correct."""
-        Plot(self).plot_rt_correct(**kwargs)
-
-    def plot_er(self, **kwargs):
-        """Plot error rate."""
-        Plot(self).plot_er(**kwargs)
-
-    def plot_rt_error(self, **kwargs):
-        """Plot rt errors."""
-        Plot(self).plot_rt_error(**kwargs)
-
-    def plot_cdf(self, **kwargs):
-        """Plot cdf."""
-        Plot(self).plot_cdf(**kwargs)
-
-    def plot_caf(self, **kwargs):
-        """Plot caf."""
-        Plot(self).plot_caf(**kwargs)
-
-    def plot_delta(self, **kwargs):
-        """Plot delta."""
-        Plot(self).plot_delta(**kwargs)
-
-    def plot_delta_errors(self, **kwargs):
-        """Plot delta."""
-        Plot(self).plot_delta_errors(**kwargs)
-
-    def select_subject(self, subject):
+    def select_subject(self, subject: int):
         """Select subject"""
         subject_data = self.data[self.data.Subject == subject]
         return Ob(subject_data)

@@ -9,7 +9,6 @@ import pandas as pd
 from dataclasses import dataclass
 from numba import jit, prange
 from scipy.stats.mstats import mquantiles
-from pydmc.dmcplot import Plot
 
 
 @dataclass
@@ -77,16 +76,15 @@ class Sim:
 
     def __init__(
         self,
-        prms=Prms(),
-        n_trls=100000,
-        n_caf=5,
-        n_delta=19,
-        p_delta=None,
-        t_delta=1,
-        full_data=False,
-        n_trls_data=5,
-        run_simulation=True,
-        plt_figs=False,
+        prms: Prms = Prms(),
+        n_trls: int = 100_000,
+        n_caf: int = 5,
+        n_delta: int = 19,
+        p_delta: tuple = (),
+        t_delta: int = 1,
+        full_data: bool = False,
+        n_trls_data: int = 5,
+        run_simulation: bool = True,
     ):
         """
         n_trls: int 100000 (default), optional
@@ -95,8 +93,8 @@ class Sim:
             caf bins
         n_delta: range, optional
             delta reaction time bins
-        p_delta: array, optional
-            delta percentiles
+        p_delta: tuple, optional
+            delta percentiles (values between 0-1)
         t_delta: int, optional
             type of delta calculation (1 = percentile, 2 = percentile bin average)
         full_data: bool, optional
@@ -105,8 +103,6 @@ class Sim:
             number of individual trials to store
         run_simulation=True, optional
             run simulation
-        plt_figs=False, optional
-            plot data
 
         Returns
         -------
@@ -120,17 +116,17 @@ class Sim:
         --------
         >>> import pydmc
         >>> dmc_sim = pydmc.Sim(full_data=True)
-        >>> dmc_sim.plot()      # Fig 3
+        >>> pydmc.Plot(dmc_sim).plot()  # Fig 3
         >>> dmc_sim = pydmc.Sim()
-        >>> dmc_sim.plot()      # Fig 3 (part)
+        >>> pydmc.Plot(dmc_sim).plot()  # Fig 3
         >>> dmc_sim = pydmc.Sim(pydmc.Prms(tau = 150))
-        >>> dmc_sim.plot()      # Fig 4
+        >>> pydmc.Plot(dmc_sim).plot()  # Fig 4
         >>> dmc_sim = pydmc.Sim(pydmc.Prms(tau = 90))
-        >>> dmc_sim.plot()      # Fig 5
+        >>> pydmc.Plot(dmc_sim).plot()  # Fig 5
         >>> dmc_sim = pydmc.Sim(pydmc.Prms(sp_dist = 1))
-        >>> dmc_sim.plot()      # Fig 6
+        >>> pydmc.Plot(dmc_sim).plot()  # Fig 6
         >>> dmc_sim = pydmc.Sim(pydmc.Prms(dr_dist = 1))
-        >>> dmc_sim.plot()      # Fig 7
+        >>> pydmc.Plot(dmc_sim).plot()  # Fig 7
         """
 
         self.prms = prms
@@ -153,10 +149,7 @@ class Sim:
         if run_simulation:
             self.run_simulation()
 
-        if plt_figs:
-            self.plot()
-
-    def run_simulation(self):
+    def run_simulation(self) -> None:
         """Run DMC simulation."""
 
         self.tim = np.arange(1, self.prms.t_max + 1, 1)
@@ -175,7 +168,7 @@ class Sim:
         self._calc_delta_values()
         self._results_summary()
 
-    def _run_simulation(self):
+    def _run_simulation(self) -> None:
 
         self.dat = []
         for comp in (1, -1):
@@ -202,7 +195,7 @@ class Sim:
                 )
             )
 
-    def _run_simulation_full(self):
+    def _run_simulation_full(self) -> None:
 
         self.xt = []
         self.dat_trials = []
@@ -234,7 +227,7 @@ class Sim:
             self.dat_trials.append(trials)
             self.dat.append(dat)
 
-    def _results_summary(self):
+    def _results_summary(self) -> None:
         """Create results summary table."""
 
         summary = []
@@ -255,7 +248,7 @@ class Sim:
             columns=["rt_cor", "sd_cor", "per_err", "rt_err", "sd_rt_err"],
         )
 
-    def _calc_caf_values(self):
+    def _calc_caf_values(self) -> None:
         """Calculate conditional accuracy functions."""
 
         def caffun(x, n):
@@ -281,12 +274,13 @@ class Sim:
             .assign(effect=lambda x: (x["comp"] - x["incomp"]) * 100)
         )
 
-    def _calc_delta_values(self):
+    # noinspection PyUnboundLocalVariable
+    def _calc_delta_values(self) -> None:
         """Calculate compatibility effect + delta values for correct trials."""
 
         if self.t_delta == 1:
 
-            if self.p_delta is not None:
+            if len(self.p_delta) != 0:
                 percentiles = self.p_delta
             else:
                 percentiles = np.linspace(0, 1, self.n_delta + 2)[1:-1]
@@ -306,8 +300,8 @@ class Sim:
 
         elif self.t_delta == 2:
 
-            if self.p_delta is not None:
-                percentiles = [0] + self.p_delta + [1]
+            if len(self.p_delta) != 0:
+                percentiles = (0,) + self.p_delta + (1,)
             else:
                 percentiles = np.linspace(0, 1, self.n_delta + 1)
 
@@ -346,11 +340,13 @@ class Sim:
         )
 
     @staticmethod
-    def rand_beta(lim=(0, 1), shape=3.0, n_trls=1):
+    def rand_beta(
+        lim: tuple = (0, 1), shape: float = 3.0, n_trls: int = 1
+    ) -> np.ndarray:
         """Return random vector between limits weighted by beta function."""
         return np.random.beta(shape, shape, n_trls) * (lim[1] - lim[0]) + lim[0]
 
-    def _dr(self):
+    def _dr(self) -> np.ndarray:
         if self.prms.dr_dist == 0:
             # constant between trial drift rate
             return np.ones(self.n_trls) * self.prms.drc
@@ -363,7 +359,7 @@ class Sim:
                 self.prms.dr_lim[0], self.prms.dr_lim[1], self.n_trls
             )
 
-    def _sp(self):
+    def _sp(self) -> np.ndarray:
         if self.prms.sp_dist == 0:
             # constant between trial starting point
             return np.zeros(self.n_trls) + self.prms.sp_bias
@@ -383,50 +379,6 @@ class Sim:
                 np.random.uniform(self.prms.sp_lim[0], self.prms.sp_lim[1], self.n_trls)
                 + self.prms.sp_bias
             )
-
-    def plot(self, **kwargs):
-        """Plot."""
-        Plot(self).plot(**kwargs)
-
-    def plot_activation(self, **kwargs):
-        """Plot activation."""
-        Plot(self).plot_activation(**kwargs)
-
-    def plot_trials(self, **kwargs):
-        """Plot trials."""
-        Plot(self).plot_trials(**kwargs)
-
-    def plot_pdf(self, **kwargs):
-        """Plot pdf."""
-        Plot(self).plot_pdf(**kwargs)
-
-    def plot_cdf(self, **kwargs):
-        """Plot cdf."""
-        Plot(self).plot_cdf(**kwargs)
-
-    def plot_caf(self, **kwargs):
-        """Plot caf."""
-        Plot(self).plot_caf(**kwargs)
-
-    def plot_delta(self, **kwargs):
-        """Plot delta."""
-        Plot(self).plot_delta(**kwargs)
-
-    def plot_delta_errors(self, **kwargs):
-        """Plot delta."""
-        Plot(self).plot_delta_errors(**kwargs)
-
-    def plot_rt_correct(self, **kwargs):
-        """Plot rt correct."""
-        Plot(self).plot_rt_correct(**kwargs)
-
-    def plot_er(self, **kwargs):
-        """Plot er."""
-        Plot(self).plot_er(**kwargs)
-
-    def plot_rt_error(self, **kwargs):
-        """Plot rt error."""
-        Plot(self).plot_rt_error(**kwargs)
 
 
 @jit(nopython=True, parallel=True)
