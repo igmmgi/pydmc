@@ -809,6 +809,7 @@ class PrmsFit:
         self._set_values(4, **kwargs)
 
     def _set_values(self, idx: int = 0, **kwargs) -> None:
+        kwargs = {k: v for k, v in kwargs.items() if k in asdict(self).keys()}
         [
             setattr(
                 self,
@@ -839,6 +840,8 @@ class Fit:
         res_ob: Ob,
         n_trls: int = 100_000,
         start_vals: PrmsFit = PrmsFit(),
+        search_grid: bool = True,
+        n_grid: int = 10,
         n_delta: int = 19,
         p_delta: tuple = (),
         t_delta: int = 1,
@@ -850,6 +853,8 @@ class Fit:
         self.fit = None
         self.n_trls = n_trls
         self.start_vals = start_vals
+        self.search_grid = search_grid
+        self.n_grid = n_grid
         self.dmc_prms = start_vals.dmc_prms()
         self.n_delta = n_delta
         self.p_delta = p_delta
@@ -867,35 +872,41 @@ class Fit:
         else:
             raise Exception("cost function not implemented!")
 
-    def _fit_initial_grid(self) -> None:
+    def _search_grid(self) -> None:
 
         grid_space = {}
         for p in asdict(self.start_vals).items():
             if p[1][-1]:
-                grid_space[p[0]] = np.linspace(p[1][1], p[1][2], 10)
+                grid_space[p[0]] = np.linspace(p[1][1], p[1][2], self.n_grid)
 
-        lowest_cost = np.Inf
-        best_starting_prms = Prms()
-        for comb in product(*grid_space.values()):
-            prms = Prms(**dict(zip(grid_space.keys(), comb)), sp_dist=1)
-            sim = Sim(prms)
-            cost = self.cost_function(sim, self.res_ob)
-            if cost < lowest_cost:
-                lowest_cost = cost
-                best_starting_prms = prms
-        print(best_starting_prms)
-        # self.start_vals = PrmsFit(**asdict(best_starting_prms))
+        min_cost = np.Inf
+        best_prms = self.dmc_prms
+        combs = list(
+            product(*grid_space.values())
+        )  # TO DO: remove list but get length?
+        for idx, comb in enumerate(combs):
+            print(f"Searching grid combination {idx}/{len(combs)}")
+            self.res_th.prms = Prms(**dict(zip(grid_space.keys(), comb)), sp_dist=1)
+            self.res_th.run_simulation()
+            cost = self.cost_function(self.res_th, self.res_ob)
+            if cost < min_cost:
+                min_cost, best_prms = cost, self.res_th.prms
+        self.start_vals.set_start_values(**asdict(best_prms))
+        self.dmc_prms = self.start_vals.dmc_prms()
 
     def fit_data(self, method: str = "nelder-mead", **kwargs) -> None:
-        self._fit_initial_grid()  # TO DO!!!
+
+        self.res_th = Sim(copy.deepcopy(self.dmc_prms))
+
         if method == "nelder-mead":
+            if self.search_grid:
+                self._search_grid()
             self._fit_data_neldermead(**kwargs)
         elif method == "differential_evolution":
             self._fit_data_differential_evolution(**kwargs)
         self.plot = PlotFit(self)
 
     def _fit_data_neldermead(self, **kwargs) -> None:
-        self.res_th = Sim(copy.deepcopy(self.dmc_prms))
         kwargs.setdefault("maxiter", 500)
         self.fit = minimize(
             self._function_to_minimise,
@@ -906,7 +917,6 @@ class Fit:
         )
 
     def _fit_data_differential_evolution(self, **kwargs) -> None:
-        self.res_th = Sim(copy.deepcopy(self.dmc_prms))
         kwargs.setdefault("maxiter", 100)
         kwargs.setdefault("polish", False)
         self.fit = differential_evolution(
@@ -996,15 +1006,12 @@ class Fit:
         cost_caf = np.sqrt(
             (1 / n_err)
             * np.sum(
-                (
-                    np.sum(
-                        res_th.caf[["comp", "incomp"]] - res_ob.caf[["comp", "incomp"]]
-                    )
+                np.sum(
+                    (res_th.caf[["comp", "incomp"]] - res_ob.caf[["comp", "incomp"]])
+                    ** 2
                 )
-                ** 2
             )
         )
-
         cost_rt = np.sqrt(
             (1 / n_rt)
             * np.sum(
@@ -1036,8 +1043,12 @@ class Fit:
         res_ob
         """
         cost_caf = np.sum(
-            ((res_ob.caf["Error"] - res_th.caf["Error"]) / res_ob.caf["Error"]) ** 2
-        )
+            (
+                (res_ob.caf.iloc[:, 1:3] - res_th.caf.iloc[:, 1:3])
+                / res_ob.caf.iloc[:, 1:3]
+            )
+            ** 2
+        ).sum()
 
         cost_rt = np.sum(
             (
