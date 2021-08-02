@@ -18,7 +18,7 @@ pip install -e pydmc
 import pydmc
 
 dat = pydmc.Sim(full_data=True)
-pydmc.Plot(dat).plot()
+dat.plot.summary()
 ```
 
 ![alt text](/figures/figure1.png)
@@ -27,15 +27,15 @@ pydmc.Plot(dat).plot()
 import pydmc
 
 dat = pydmc.Sim(pydmc.Prms(tau=150), full_data=True)
-pydmc.Plot(dat).plot()
+dat.plot.summary()
 ```
 
 ![alt text](/figures/figure2.png)
 
 ```python
-from pydmc import Sim, Prms, Plot
+from pydmc import Sim, Prms
 
 dat = Sim(Prms(tau=150))
-Plot(dat).plot()
+dat.plot.summary()
 
 ```
