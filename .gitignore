@@ -5,10 +5,6 @@
 pydmc/__pycache__*
 pydmc.egg-info
 
-
-# files
-pydmc/dmc.py
-
 # Unit test / coverage reports
 htmlcov/
 .tox/
