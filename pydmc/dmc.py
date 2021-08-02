@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd
 from dataclasses import dataclass, asdict
 from fastkde import fastKDE
+from itertools import product
 from numba import jit, prange
 from scipy.stats.mstats import mquantiles
 from scipy.optimize import minimize, differential_evolution
@@ -774,41 +775,48 @@ class Ob:
             self.delta_subject.groupby(["bin"]).apply(aggfun).reset_index()
         ).drop("level_1", axis=1)
 
-    def select_subject(self, subject: int):
+    def select_subject(self, subject: int) -> pd.DataFrame:
         """Select subject"""
         return self.data[self.data.Subject == subject]
 
 
 @dataclass
 class PrmsFit:
-    # start, min, max, fitted
-    amp: tuple = (20, 0, 40, True)
-    tau: tuple = (30, 5, 300, True)
-    drc: tuple = (0.5, 0.1, 1.0, True)
-    bnds: tuple = (75, 20, 150, True)
-    res_mean: tuple = (300, 200, 800, True)
-    res_sd: tuple = (30, 5, 100, True)
-    aa_shape: tuple = (2, 1, 3, True)
-    sp_shape: tuple = (3, 2, 4, True)
-    sigma: tuple = (4, 1, 10, False)
+    # start, min, max, fitted, initial grid search
+    amp: tuple = (20, 0, 40, True, False)
+    tau: tuple = (30, 5, 300, True, True)
+    drc: tuple = (0.5, 0.1, 1.0, True, False)
+    bnds: tuple = (75, 20, 150, True, False)
+    res_mean: tuple = (300, 200, 800, True, False)
+    res_sd: tuple = (30, 5, 100, True, False)
+    aa_shape: tuple = (2, 1, 3, True, False)
+    sp_shape: tuple = (3, 2, 4, True, False)
+    sigma: tuple = (4, 1, 10, False, False)
 
     def set_start_values(self, **kwargs) -> None:
-        [setattr(self, k, (v,) + getattr(self, k)[1:]) for k, v in kwargs.items()]
+        self._set_values(0, **kwargs)
 
     def set_min_values(self, **kwargs) -> None:
-        [
-            setattr(self, k, (getattr(self, k)[0],) + (v,) + getattr(self, k)[2:])
-            for k, v in kwargs.items()
-        ]
+        self._set_values(1, **kwargs)
 
     def set_max_values(self, **kwargs) -> None:
-        [
-            setattr(self, k, getattr(self, k)[0:2] + (v,) + (getattr(self, k)[3],))
-            for k, v in kwargs.items()
-        ]
+        self._set_values(2, **kwargs)
 
     def set_fitted_values(self, **kwargs) -> None:
-        [setattr(self, k, getattr(self, k)[0:3] + (v,)) for k, v in kwargs.items()]
+        self._set_values(3, **kwargs)
+
+    def set_grid_search_values(self, **kwargs) -> None:
+        self._set_values(4, **kwargs)
+
+    def _set_values(self, idx: int = 0, **kwargs) -> None:
+        [
+            setattr(
+                self,
+                k,
+                tuple(getattr(self, k)[i] if i != idx else v for i in range(5)),
+            )
+            for k, v in kwargs.items()
+        ]
 
     def dmc_prms(self, sp_dist: int = 1) -> Prms:
         return Prms(
@@ -816,13 +824,13 @@ class PrmsFit:
         )
 
     def array(self, idx: int = 0) -> list:
-        return [x[idx] for x in asdict(self).values() if x[-1]]
+        return [x[idx] for x in asdict(self).values() if x[-2]]
 
     def dict(self, idx: int = 0) -> dict:
         return {k: v[idx] for k, v in asdict(self).items() if v}
 
     def bounds(self) -> list:
-        return [x[1:3] for x in asdict(self).values() if x[-1]]
+        return [x[1:3] for x in asdict(self).values() if x[-2]]
 
 
 class Fit:
@@ -849,7 +857,7 @@ class Fit:
         self.n_caf = n_caf
         self.cost_function = self._assign_cost_function(cost_function)
         self.cost_value = np.Inf
-        self.plot: PlotFit = PlotFit(self)
+        self.plot: None
 
     def _assign_cost_function(self, cost_function: str):
         if cost_function == "RMSE":
@@ -859,10 +867,34 @@ class Fit:
         else:
             raise Exception("cost function not implemented!")
 
-    def _fit_initial_grid(self):
-        pass
+    def _fit_initial_grid(self) -> None:
 
-    def fit_data_neldermead(self, **kwargs) -> None:
+        grid_space = {}
+        for p in asdict(self.start_vals).items():
+            if p[1][-1]:
+                grid_space[p[0]] = np.linspace(p[1][1], p[1][2], 10)
+
+        lowest_cost = np.Inf
+        best_starting_prms = Prms()
+        for comb in product(*grid_space.values()):
+            prms = Prms(**dict(zip(grid_space.keys(), comb)), sp_dist=1)
+            sim = Sim(prms)
+            cost = self.cost_function(sim, self.res_ob)
+            if cost < lowest_cost:
+                lowest_cost = cost
+                best_starting_prms = prms
+        print(best_starting_prms)
+        # self.start_vals = PrmsFit(**asdict(best_starting_prms))
+
+    def fit_data(self, method: str = "nelder-mead", **kwargs) -> None:
+        self._fit_initial_grid()  # TO DO!!!
+        if method == "nelder-mead":
+            self._fit_data_neldermead(**kwargs)
+        elif method == "differential_evolution":
+            self._fit_data_differential_evolution(**kwargs)
+        self.plot = PlotFit(self)
+
+    def _fit_data_neldermead(self, **kwargs) -> None:
         self.res_th = Sim(copy.deepcopy(self.dmc_prms))
         kwargs.setdefault("maxiter", 500)
         self.fit = minimize(
@@ -873,8 +905,8 @@ class Fit:
             options=kwargs,
         )
 
-    def fit_data_differential_evolution(self, **kwargs) -> None:
-        self.res_th = Sim(copy.deepcopy(self.start_vals.dmc_prms()))
+    def _fit_data_differential_evolution(self, **kwargs) -> None:
+        self.res_th = Sim(copy.deepcopy(self.dmc_prms))
         kwargs.setdefault("maxiter", 100)
         kwargs.setdefault("polish", False)
         self.fit = differential_evolution(
@@ -941,7 +973,7 @@ class Fit:
     def _update_parameters(self, x: list) -> None:
         idx = 0
         for k in asdict(self.start_vals).keys():
-            if getattr(self.start_vals, k)[-1]:
+            if getattr(self.start_vals, k)[-2]:
                 setattr(self.res_th.prms, k, x[idx])
                 idx += 1
         self.res_th.prms.sp_lim = (-self.res_th.prms.bnds, self.res_th.prms.bnds)
@@ -964,7 +996,11 @@ class Fit:
         cost_caf = np.sqrt(
             (1 / n_err)
             * np.sum(
-                np.sum(res_th.caf[["comp", "incomp"]] - res_ob.caf[["comp", "incomp"]])
+                (
+                    np.sum(
+                        res_th.caf[["comp", "incomp"]] - res_ob.caf[["comp", "incomp"]]
+                    )
+                )
                 ** 2
             )
         )
@@ -973,10 +1009,12 @@ class Fit:
             (1 / n_rt)
             * np.sum(
                 np.sum(
-                    res_th.delta[["mean_comp", "mean_incomp"]]
-                    - res_ob.delta[["mean_comp", "mean_incomp"]]
+                    (
+                        res_th.delta[["mean_comp", "mean_incomp"]]
+                        - res_ob.delta[["mean_comp", "mean_incomp"]]
+                    )
+                    ** 2
                 )
-                ** 2
             )
         )
 
@@ -1019,7 +1057,9 @@ class FitSubjects:
         self.fits = self._split_subjects()
 
     def _split_subjects(self) -> list[Fit]:
-        return [copy.deepcopy(Fit(self.res_ob.select_subject(s))) for s in self.subjects]
+        return [
+            copy.deepcopy(Fit(self.res_ob.select_subject(s))) for s in self.subjects
+        ]
 
     def fit_data_neldermead(self, **kwargs) -> None:
         """Fit data using neldermead."""
