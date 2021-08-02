@@ -1,8 +1,8 @@
 import inspect
 import matplotlib.pyplot as plt
 import numpy as np
-from typing import Union
 from fastkde import fastKDE
+from typing import Union
 from pydmc.dmcob import Ob
 from pydmc.dmcsim import Sim
 from pydmc.dmcfit import Fit
@@ -20,7 +20,7 @@ class Plot:
 
         plt.figure(len(plt.get_fignums()) + 1)
 
-        if hasattr(self.res, "prms"):
+        if isinstance(self.res, Sim):
             if kwargs["fig_type"] == "summary1" and not self.res.full_data:
                 kwargs["fig_type"] = "summary2"
             if kwargs["fig_type"] == "summary1":
@@ -139,6 +139,10 @@ class Plot:
     ):
         """Plot activation."""
 
+        if not isinstance(self.res, Sim):
+            print("Observed data does not have activation function!")
+            return
+
         if not self.res.xt:
             print("Plotting activation function requires full_data=True")
             return
@@ -182,12 +186,16 @@ class Plot:
     ):
         """Plot individual trials."""
 
-        if show:
-            plt.figure(len(plt.get_fignums()) + 1)
+        if not isinstance(self.res, Sim):
+            print("Observed data does not have individual trials!")
+            return
 
         if not self.res.xt:
             print("Plotting individual trials function requires full_data=True")
             return
+
+        if show:
+            plt.figure(len(plt.get_fignums()) + 1)
 
         l_kws = _filter_dict(kwargs, plt.Line2D)
         for trl in range(self.res.n_trls_data):

@@ -102,7 +102,6 @@ class Ob:
             self.data.columns = ("Subject", "Comp", "RT", "Error")
 
     def _comp_coding(self) -> None:
-        self.data["Comp"] = np.where(self.data["Comp"] == self.comp_coding[0], 0, 1)
         if self.comp_coding != ("comp", "incomp"):
             self.data["Comp"] = np.where(
                 self.data["Comp"] == self.comp_coding[0], "comp", "incomp"
@@ -317,5 +316,4 @@ class Ob:
 
     def select_subject(self, subject: int):
         """Select subject"""
-        subject_data = self.data[self.data.Subject == subject]
-        return Ob(subject_data)
+        return self.data[self.data.Subject == subject]

@@ -128,7 +128,6 @@ class Sim:
         >>> dmc_sim = pydmc.Sim(pydmc.Prms(dr_dist = 1))
         >>> pydmc.Plot(dmc_sim).plot()  # Fig 7
         """
-
         self.prms = prms
         self.n_trls = n_trls
         self.n_caf = n_caf
