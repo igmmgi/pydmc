@@ -96,21 +96,22 @@ class Sim:
         run_simulation: bool = True,
     ):
         """
-        n_trls: int 100000 (default), optional
+        n_trls: int (100000), optional
             number of trials
-        n_caf: range, optional
-            caf bins
-        n_delta: range, optional
-            delta reaction time bins
-        p_delta: tuple, optional
-            delta percentiles (values between 0-1)
-        t_delta: int, optional
-            type of delta calculation (1 = percentile, 2 = percentile bin average)
-        full_data: bool, optional
-            run simulation to t_max to caluculate activation
-        n_trls_data: int, optional
+        n_caf: int (5), optional
+            number of caf bins
+        n_delta: int (19), optional
+            number of delta reaction time bins
+        p_delta: tuple (), optional
+            alternative to n_delta by directly specifying required percentile values (values between 0-1)
+        t_delta: int 1, optional
+            type of delta calculation (1=direct percentile points, 2=percentile bounds (tile) average)
+        full_data: bool True, optional
+            run simulation to t_max to calculate activation NB. only required when plotting activation function
+            or inddividual trials
+        n_trls_data: int 5, optional
             number of individual trials to store
-        run_simulation=True, optional
+        run_simulation: bool True, optional
             run simulation
 
         Returns
@@ -1322,8 +1323,8 @@ class Plot:
             plt.show(block=False)
 
     def _bounds(self):
-        plt.axhline(y=self.res.prms.bnds, color="black", linestyle="--")
-        plt.axhline(y=-self.res.prms.bnds, color="black", linestyle="--")
+        plt.axhline(y=self.res.prms.bnds, color="grey", linestyle="--")
+        plt.axhline(y=-self.res.prms.bnds, color="grey", linestyle="--")
 
     def pdf(
         self,
@@ -1398,9 +1399,11 @@ class Plot:
 
         if not hasattr(self.res, "prms"):
 
+            print("here")
             kwargs.setdefault("marker", "o")
             kwargs.setdefault("markersize", 4)
 
+            l_kws = _filter_dict(kwargs, plt.Line2D)
             for idx, comp in enumerate(("mean_comp", "mean_incomp")):
                 plt.plot(
                     self.res.delta[comp],
@@ -1422,6 +1425,7 @@ class Plot:
         kwargs.setdefault("xlabel", "Time (ms)")
         kwargs.setdefault("ylabel", "CDF")
 
+        plt.axhline(y=1, color="grey", linestyle="--")
         _adjust_plt(**kwargs)
 
         if legend_position:
@@ -2015,7 +2019,7 @@ def _plot_beh(dat, cond_labels: tuple, zeroed: bool, **kwargs):
 
 
 def _filter_dict(given, allowed):
-    """Internal function to filter dict **kwargs"""
+    """Internal function to filter dict **kwargs for allowd arguments."""
     f = {}
     allowed = inspect.signature(allowed).parameters
     for k, v in given.items():
@@ -2025,7 +2029,7 @@ def _filter_dict(given, allowed):
 
 
 def _adjust_plt(**kwargs):
-    """Internal function to adjust some plot properties."""
+    """Internal function to adjust some common plot properties."""
     plt.xlim(kwargs.get("xlim", None))
     plt.ylim(kwargs.get("ylim", None))
     plt.xlabel(kwargs.get("xlabel", ""), fontsize=kwargs.get("label_fontsize", 12))
