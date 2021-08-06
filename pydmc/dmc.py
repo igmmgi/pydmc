@@ -286,7 +286,6 @@ class Sim:
             .assign(effect=lambda x: (x["comp"] - x["incomp"]) * 100)
         )
 
-    # noinspection PyUnboundLocalVariable
     def _calc_delta_values(self) -> None:
         """Calculate compatibility effect + delta values for correct trials."""
 
@@ -840,6 +839,7 @@ class Fit:
         self,
         res_ob: Ob,
         n_trls: int = 100_000,
+        sim_prms: Prms = Prms(sp_dist=1),
         start_vals: PrmsFit = PrmsFit(),
         search_grid: bool = True,
         n_grid: int = 10,
@@ -852,6 +852,7 @@ class Fit:
         self.res_ob = res_ob
         self.res_th = None
         self.fit = None
+        self.sim_prms = sim_prms
         self.n_trls = n_trls
         self.start_vals = start_vals
         self.search_grid = search_grid
@@ -880,24 +881,26 @@ class Fit:
             if p[1][-1]:
                 grid_space[p[0]] = np.linspace(p[1][1], p[1][2], self.n_grid)
 
+        start_values = self.start_vals.dict(0)
         min_cost = np.Inf
         best_prms = self.dmc_prms
         combs = list(
             product(*grid_space.values())
         )  # TO DO: remove list but get length?
         for idx, comb in enumerate(combs):
-            print(f"Searching grid combination {idx}/{len(combs)}")
-            self.res_th.prms = Prms(**dict(zip(grid_space.keys(), comb)), sp_dist=1)
+            print(f"Searching grid combination {idx+1}/{len(combs)}")
+            start_values.update(dict(zip(grid_space.keys(), comb)))
+            self.res_th.prms = Prms(**start_values, sp_dist=1)
             self.res_th.run_simulation()
-            cost = self.cost_function(self.res_th, self.res_ob)
-            if cost < min_cost:
-                min_cost, best_prms = cost, self.res_th.prms
+            self.cost_value = self.cost_function(self.res_th, self.res_ob)
+            if self.cost_value < min_cost:
+                min_cost, best_prms = self.cost_value, self.res_th.prms
         self.start_vals.set_start_values(**asdict(best_prms))
         self.dmc_prms = self.start_vals.dmc_prms()
 
     def fit_data(self, method: str = "nelder-mead", **kwargs) -> None:
 
-        self.res_th = Sim(copy.deepcopy(self.dmc_prms))
+        self.res_th = Sim(copy.deepcopy(self.sim_prms))
 
         if method == "nelder-mead":
             if self.search_grid:
@@ -918,7 +921,7 @@ class Fit:
         )
 
     def _fit_data_differential_evolution(self, **kwargs) -> None:
-        kwargs.setdefault("maxiter", 100)
+        kwargs.setdefault("maxiter", 10)
         kwargs.setdefault("polish", False)
         self.fit = differential_evolution(
             self._function_to_minimise,
@@ -937,6 +940,9 @@ class Fit:
             f"res_sd:{self.res_th.prms.res_sd:4.1f}",
             f"aa_shape:{self.res_th.prms.aa_shape:4.1f}",
             f"sp_shape:{self.res_th.prms.sp_shape:4.1f}",
+            f"sp_shape:{self.res_th.prms.sp_bias:4.1f}",
+            f"sp_shape:{self.res_th.prms.dr_shape:4.1f}",
+            f"sp_shape:{self.res_th.prms.sigma:4.1f}",
             f"| cost={self.cost_value:.2f}",
         )
 
@@ -1053,8 +1059,8 @@ class Fit:
 
         cost_rt = np.sum(
             (
-                (res_ob.delta.iloc[:, 1:3] - res_th.delta.iloc[:, 1:3])
-                / res_ob.delta.iloc[:, 1:3]
+                (res_ob.delta.iloc[:, 1:4] - res_th.delta.iloc[:, 1:4])
+                / res_ob.delta.iloc[:, 1:4]
             )
             ** 2
         ).sum()
