@@ -1754,7 +1754,7 @@ class PlotFit:
         for idx, res in enumerate((self.res_ob, self.res_th)):
             plt.plot(
                 cond_labels,
-                res.summary["rt_cor"],
+                res.summary["rt_err"],
                 color=kwargs["colors"][idx],
                 linestyle=kwargs["linestyles"][idx],
                 label=legend_labels[idx],
