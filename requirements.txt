@@ -1,6 +1,6 @@
 numpy
 matplotlib
-fastkde
+fastkde==1.0.30
 scipy
 numba
 pandas
