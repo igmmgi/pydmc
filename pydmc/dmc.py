@@ -179,10 +179,8 @@ class Sim:
         self._results_summary()
 
     def _run_simulation(self) -> None:
-
         self.data = []
         for comp in (1, -1):
-
             drc = (
                 comp
                 * self.eq4
@@ -206,12 +204,10 @@ class Sim:
             )
 
     def _run_simulation_full(self) -> None:
-
         self.xt = []
         self.data_trials = []
         self.data = []
         for comp in (1, -1):
-
             drc = (
                 comp
                 * self.eq4
@@ -290,7 +286,6 @@ class Sim:
         """Calculate compatibility effect + delta values for correct trials."""
 
         if self.t_delta == 1:
-
             if len(self.p_delta) != 0:
                 percentiles = self.p_delta
             else:
@@ -310,7 +305,6 @@ class Sim:
             )
 
         elif self.t_delta == 2:
-
             if len(self.p_delta) != 0:
                 percentiles = (0,) + self.p_delta + (1,)
             else:
@@ -396,7 +390,6 @@ class Sim:
 def _run_simulation(
     drc, sp, dr, t_max, sigma, res_dist_type, res_mean, res_sd, bnds, n_trls
 ):
-
     data = np.vstack((np.ones(n_trls) * t_max, np.zeros(n_trls)))
     if res_dist_type == 1:
         res_dist = np.random.normal(res_mean, res_sd, n_trls)
@@ -430,7 +423,6 @@ def _run_simulation_full(
     n_trls,
     n_trls_data,
 ):
-
     data = np.vstack((np.ones(n_trls) * t_max, np.zeros(n_trls)))
     if res_dist_type == 1:
         res_dist = np.random.normal(res_mean, res_sd, n_trls)
@@ -441,7 +433,6 @@ def _run_simulation_full(
     activation = np.zeros(t_max)
     trials = np.zeros((n_trls_data, t_max))
     for trl in prange(n_trls):
-
         rand_nums = np.random.randn(1, t_max)
         xt = drc + dr[trl] + (sigma * rand_nums)
 
@@ -697,7 +688,6 @@ class Ob:
             x = x[(x.outlier == 0) & (x.Error == 0)].reset_index()
 
             if self.t_delta == 1:
-
                 if len(self.p_delta) != 0:
                     percentiles = self.p_delta
                 else:
@@ -716,7 +706,6 @@ class Ob:
                 )
 
             elif self.t_delta == 2:
-
                 if len(self.p_delta) != 0:
                     percentiles = (0,) + self.p_delta + (1,)
                 else:
@@ -875,7 +864,6 @@ class Fit:
             raise Exception("cost function not implemented!")
 
     def _search_grid(self) -> None:
-
         grid_space = {}
         for p in asdict(self.start_vals).items():
             if p[1][-1]:
@@ -899,7 +887,6 @@ class Fit:
         self.dmc_prms = self.start_vals.dmc_prms()
 
     def fit_data(self, method: str = "nelder-mead", **kwargs) -> None:
-
         self.res_th = Sim(copy.deepcopy(self.sim_prms))
 
         if method == "nelder-mead":
@@ -979,7 +966,6 @@ class Fit:
         )
 
     def _function_to_minimise(self, x: list) -> float:
-
         self._update_parameters(x)
         self.res_th.run_simulation()
         self.cost_value = self.cost_function(self.res_th, self.res_ob)
@@ -1105,7 +1091,6 @@ class FitSubjects:
 
 class Plot:
     def __init__(self, res: Union[Sim, Ob]):
-
         assert isinstance(res, Sim) or isinstance(
             res, Ob
         ), "res must be of type 'Sim' or 'Ob'"
@@ -1133,7 +1118,6 @@ class Plot:
             self._summary1_res_ob(**kwargs)
 
     def _summary1_res_th(self, **kwargs):
-
         # upper left panel (activation)
         plt.subplot2grid((6, 4), (0, 0), rowspan=3, colspan=2)
         self.activation(show=False, **kwargs)
@@ -1162,7 +1146,6 @@ class Plot:
         plt.show(block=False)
 
     def _summary2_res_th(self, **kwargs):
-
         # upper right (left) panel (PDF)
         plt.subplot2grid((3, 2), (0, 0))
         self.pdf(show=False, **kwargs)
@@ -1183,7 +1166,6 @@ class Plot:
         plt.show(block=False)
 
     def _summary3_res_th(self, **kwargs):
-
         # upper right (left) panel (PDF)
         plt.subplot2grid((3, 1), (0, 0))
         self.rt_correct(show=False, **kwargs)
@@ -1348,7 +1330,6 @@ class Plot:
         l_kws = _filter_dict(kwargs, plt.Line2D)
 
         if isinstance(self.res, Sim):
-
             for comp in (0, 1):
                 pdf, axes = fastKDE.pdf(self.res.data[comp][0])
                 plt.plot(
@@ -1357,7 +1338,6 @@ class Plot:
             kwargs.setdefault("xlim", [0, self.res.prms.t_max])
 
         elif isinstance(self.res, Ob):
-
             for idx, comp in enumerate(("comp", "incomp")):
                 data = np.array(self.res.data["RT"][self.res.data.Comp == comp])
                 pdf, axes = fastKDE.pdf(data)
@@ -1404,8 +1384,6 @@ class Plot:
             kwargs.setdefault("xlim", [0, self.res.prms.t_max])
 
         if not hasattr(self.res, "prms"):
-
-            print("here")
             kwargs.setdefault("marker", "o")
             kwargs.setdefault("markersize", 4)
 
@@ -1607,7 +1585,6 @@ class Plot:
 
 class PlotFit:
     def __init__(self, res: Fit):
-
         assert isinstance(res, Fit), "res must be of type 'Fit'"
 
         self.res_th = res.res_th
