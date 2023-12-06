@@ -459,14 +459,16 @@ def _run_simulation_full(
 
 def flanker_data() -> pd.DataFrame:
     """Load raw Flanker data from Ulrich et al. (2015)."""
-    datafile = pkg_resources.resource_stream(__name__, "data/flankerData.csv")
-    return pd.read_csv(datafile, sep="\t")
+    with pkg_resources.resource_stream(__name__, "data/flankerData.csv") as f:
+        data = pd.read_csv(f, sep="\t")
+    return data
 
 
 def simon_data() -> pd.DataFrame:
     """Load raw Simon task data from Ulrich et al. (2015)."""
-    datafile = pkg_resources.resource_stream(__name__, "data/simonData.csv")
-    return pd.read_csv(datafile, sep="\t")
+    with pkg_resources.resource_stream(__name__, "data/simonData.csv") as f:
+        data = pd.read_csv(f, sep="\t")
+    return data
 
 
 class Ob:
