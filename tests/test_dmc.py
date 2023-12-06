@@ -18,12 +18,12 @@ class DMCTestCaseDmcSim(unittest.TestCase):
         """
         dat = pydmc.Sim(pydmc.Prms(tau=30))
 
-        self.assertLess(abs(440 - dat.summary["rt_cor"][0]), self.rt_tolerance)
-        self.assertLess(abs(106 - dat.summary["sd_cor"][0]), self.sd_tolerance)
-        self.assertLess(abs(0.7 - dat.summary["per_err"][0]), self.err_tolerance)
-        self.assertLess(abs(458 - dat.summary["rt_cor"][1]), self.rt_tolerance)
-        self.assertLess(abs(95 - dat.summary["sd_cor"][1]), self.sd_tolerance)
-        self.assertLess(abs(1.4 - dat.summary["per_err"][1]), self.err_tolerance)
+        self.assertLess(abs(440 - dat.summary["rt_cor"].iloc[0]), self.rt_tolerance)
+        self.assertLess(abs(106 - dat.summary["sd_cor"].iloc[0]), self.sd_tolerance)
+        self.assertLess(abs(0.7 - dat.summary["per_err"].iloc[0]), self.err_tolerance)
+        self.assertLess(abs(458 - dat.summary["rt_cor"].iloc[1]), self.rt_tolerance)
+        self.assertLess(abs(95 - dat.summary["sd_cor"].iloc[1]), self.sd_tolerance)
+        self.assertLess(abs(1.4 - dat.summary["per_err"].iloc[1]), self.err_tolerance)
 
     def test_sim2(self):
         """
@@ -33,12 +33,12 @@ class DMCTestCaseDmcSim(unittest.TestCase):
         """
         dat = pydmc.Sim(pydmc.Prms(tau=150))
 
-        self.assertLess(abs(422 - dat.summary["rt_cor"][0]), self.rt_tolerance)
-        self.assertLess(abs(90 - dat.summary["sd_cor"][0]), self.sd_tolerance)
-        self.assertLess(abs(0.3 - dat.summary["per_err"][0]), self.err_tolerance)
-        self.assertLess(abs(483 - dat.summary["rt_cor"][1]), self.rt_tolerance)
-        self.assertLess(abs(103 - dat.summary["sd_cor"][1]), self.sd_tolerance)
-        self.assertLess(abs(2.2 - dat.summary["per_err"][1]), self.err_tolerance)
+        self.assertLess(abs(422 - dat.summary["rt_cor"].iloc[0]), self.rt_tolerance)
+        self.assertLess(abs(90 - dat.summary["sd_cor"].iloc[0]), self.sd_tolerance)
+        self.assertLess(abs(0.3 - dat.summary["per_err"].iloc[0]), self.err_tolerance)
+        self.assertLess(abs(483 - dat.summary["rt_cor"].iloc[1]), self.rt_tolerance)
+        self.assertLess(abs(103 - dat.summary["sd_cor"].iloc[1]), self.sd_tolerance)
+        self.assertLess(abs(2.2 - dat.summary["per_err"].iloc[1]), self.err_tolerance)
 
     def test_sim3(self):
         """
@@ -48,12 +48,12 @@ class DMCTestCaseDmcSim(unittest.TestCase):
         """
         dat = pydmc.Sim(pydmc.Prms(tau=150))
 
-        self.assertLess(abs(422 - dat.summary["rt_cor"][0]), self.rt_tolerance)
-        self.assertLess(abs(90 - dat.summary["sd_cor"][0]), self.sd_tolerance)
-        self.assertLess(abs(0.3 - dat.summary["per_err"][0]), self.err_tolerance)
-        self.assertLess(abs(483 - dat.summary["rt_cor"][1]), self.rt_tolerance)
-        self.assertLess(abs(103 - dat.summary["sd_cor"][1]), self.sd_tolerance)
-        self.assertLess(abs(2.2 - dat.summary["per_err"][1]), self.err_tolerance)
+        self.assertLess(abs(422 - dat.summary["rt_cor"].iloc[0]), self.rt_tolerance)
+        self.assertLess(abs(90 - dat.summary["sd_cor"].iloc[0]), self.sd_tolerance)
+        self.assertLess(abs(0.3 - dat.summary["per_err"].iloc[0]), self.err_tolerance)
+        self.assertLess(abs(483 - dat.summary["rt_cor"].iloc[1]), self.rt_tolerance)
+        self.assertLess(abs(103 - dat.summary["sd_cor"].iloc[1]), self.sd_tolerance)
+        self.assertLess(abs(2.2 - dat.summary["per_err"].iloc[1]), self.err_tolerance)
 
     def test_sim4(self):
         """
@@ -63,12 +63,12 @@ class DMCTestCaseDmcSim(unittest.TestCase):
         """
         dat = pydmc.Sim(pydmc.Prms(tau=90))
 
-        self.assertLess(abs(420 - dat.summary["rt_cor"][0]), self.rt_tolerance)
-        self.assertLess(abs(96 - dat.summary["sd_cor"][0]), self.sd_tolerance)
-        self.assertLess(abs(0.3 - dat.summary["per_err"][0]), self.err_tolerance)
-        self.assertLess(abs(477 - dat.summary["rt_cor"][1]), self.rt_tolerance)
-        self.assertLess(abs(96 - dat.summary["sd_cor"][1]), self.sd_tolerance)
-        self.assertLess(abs(2.4 - dat.summary["per_err"][1]), self.err_tolerance)
+        self.assertLess(abs(420 - dat.summary["rt_cor"].iloc[0]), self.rt_tolerance)
+        self.assertLess(abs(96 - dat.summary["sd_cor"].iloc[0]), self.sd_tolerance)
+        self.assertLess(abs(0.3 - dat.summary["per_err"].iloc[0]), self.err_tolerance)
+        self.assertLess(abs(477 - dat.summary["rt_cor"].iloc[1]), self.rt_tolerance)
+        self.assertLess(abs(96 - dat.summary["sd_cor"].iloc[1]), self.sd_tolerance)
+        self.assertLess(abs(2.4 - dat.summary["per_err"].iloc[1]), self.err_tolerance)
 
     def test_sim5(self):
         """
@@ -78,12 +78,12 @@ class DMCTestCaseDmcSim(unittest.TestCase):
         """
         dat = pydmc.Sim(pydmc.Prms(tau=30, sp_dist=1))
 
-        self.assertLess(abs(436 - dat.summary["rt_cor"][0]), self.rt_tolerance)
-        self.assertLess(abs(116 - dat.summary["sd_cor"][0]), self.sd_tolerance)
-        self.assertLess(abs(1.7 - dat.summary["per_err"][0]), self.err_tolerance)
-        self.assertLess(abs(452 - dat.summary["rt_cor"][1]), self.rt_tolerance)
-        self.assertLess(abs(101 - dat.summary["sd_cor"][1]), self.sd_tolerance)
-        self.assertLess(abs(6.9 - dat.summary["per_err"][1]), self.err_tolerance)
+        self.assertLess(abs(436 - dat.summary["rt_cor"].iloc[0]), self.rt_tolerance)
+        self.assertLess(abs(116 - dat.summary["sd_cor"].iloc[0]), self.sd_tolerance)
+        self.assertLess(abs(1.7 - dat.summary["per_err"].iloc[0]), self.err_tolerance)
+        self.assertLess(abs(452 - dat.summary["rt_cor"].iloc[1]), self.rt_tolerance)
+        self.assertLess(abs(101 - dat.summary["sd_cor"].iloc[1]), self.sd_tolerance)
+        self.assertLess(abs(6.9 - dat.summary["per_err"].iloc[1]), self.err_tolerance)
 
     def test_sim6(self):
         """
@@ -93,12 +93,12 @@ class DMCTestCaseDmcSim(unittest.TestCase):
         """
         dat = pydmc.Sim(pydmc.Prms(tau=30, dr_dist=1))
 
-        self.assertLess(abs(477 - dat.summary["rt_cor"][0]), self.rt_tolerance)
-        self.assertLess(abs(145 - dat.summary["sd_cor"][0]), self.sd_tolerance)
-        self.assertLess(abs(3.1 - dat.summary["per_err"][0]), self.err_tolerance)
-        self.assertLess(abs(494 - dat.summary["rt_cor"][1]), self.rt_tolerance)
-        self.assertLess(abs(134 - dat.summary["sd_cor"][1]), self.sd_tolerance)
-        self.assertLess(abs(4.1 - dat.summary["per_err"][1]), self.err_tolerance)
+        self.assertLess(abs(477 - dat.summary["rt_cor"].iloc[0]), self.rt_tolerance)
+        self.assertLess(abs(145 - dat.summary["sd_cor"].iloc[0]), self.sd_tolerance)
+        self.assertLess(abs(3.1 - dat.summary["per_err"].iloc[0]), self.err_tolerance)
+        self.assertLess(abs(494 - dat.summary["rt_cor"].iloc[1]), self.rt_tolerance)
+        self.assertLess(abs(134 - dat.summary["sd_cor"].iloc[1]), self.sd_tolerance)
+        self.assertLess(abs(4.1 - dat.summary["per_err"].iloc[1]), self.err_tolerance)
 
     # just check plot code runs
     def test_sim7(self):
@@ -126,18 +126,18 @@ class DMCTestCaseDmcOb(unittest.TestCase):
         """Flanker data check."""
         dat_flanker = pydmc.Ob(pydmc.flanker_data())
 
-        self.assertEqual(dat_flanker.data.RT[0], 601.657182)
+        self.assertEqual(dat_flanker.data.RT.iloc[0], 601.657182)
         self.assertEqual(dat_flanker.delta.mean_comp[0], 316.69324347500003)
-        self.assertEqual(dat_flanker.caf.effect[0], 17.63034759358289)
+        self.assertEqual(dat_flanker.caf.effect.iloc[0], 17.63034759358289)
 
     def test_ob2(self):
         """Simon data check."""
 
         dat_simon = pydmc.Ob(pydmc.simon_data())
 
-        self.assertEqual(dat_simon.data.RT[0], 451.400105)
+        self.assertEqual(dat_simon.data.RT.iloc[0], 451.400105)
         self.assertEqual(dat_simon.delta.mean_comp[0], 304.90375670624996)
-        self.assertEqual(dat_simon.caf.effect[0], 20.73306595365419)
+        self.assertEqual(dat_simon.caf.effect.iloc[0], 20.73306595365419)
 
     # just check plot code runs
     def test_ob3(self):
