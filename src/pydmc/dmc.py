@@ -7,7 +7,7 @@ Cognitive Psychology, 78, 148-174.
 import copy
 import glob
 import inspect
-import pkg_resources
+import importlib.resources as pkg_resources
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -459,14 +459,14 @@ def _run_simulation_full(
 
 def flanker_data() -> pd.DataFrame:
     """Load raw Flanker data from Ulrich et al. (2015)."""
-    with pkg_resources.resource_stream(__name__, "data/flankerData.csv") as f:
+    with pkg_resources.path(__name__, "data/flankerData.csv") as f:
         data = pd.read_csv(f, sep="\t")
     return data
 
 
 def simon_data() -> pd.DataFrame:
     """Load raw Simon task data from Ulrich et al. (2015)."""
-    with pkg_resources.resource_stream(__name__, "data/simonData.csv") as f:
+    with pkg_resources.path(__name__, "data/simonData.csv") as f:
         data = pd.read_csv(f, sep="\t")
     return data
 
@@ -1333,17 +1333,17 @@ class Plot:
 
         if isinstance(self.res, Sim):
             for comp in (0, 1):
-                pdf, axes = fastKDE.pdf(self.res.data[comp][0])
+                pdf_result = fastKDE.pdf(self.res.data[comp][0])
                 plt.plot(
-                    axes, pdf, color=colors[comp], label=cond_labels[comp], **l_kws
+                    pdf_result.coords["var0"], pdf_result.data, color=colors[comp], label=cond_labels[comp], **l_kws
                 )
             kwargs.setdefault("xlim", [0, self.res.prms.t_max])
 
         elif isinstance(self.res, Ob):
             for idx, comp in enumerate(("comp", "incomp")):
                 data = np.array(self.res.data["RT"][self.res.data.Comp == comp])
-                pdf, axes = fastKDE.pdf(data)
-                plt.plot(axes, pdf, color=colors[idx], label=cond_labels[idx], **l_kws)
+                pdf_result = fastKDE.pdf(data)
+                plt.plot(pdf_result.coords["var0"], pdf_result.data, color=colors[idx], label=cond_labels[idx], **l_kws)
             kwargs.setdefault("xlim", [min(data) - 100, max(data) + 100])
 
         kwargs.setdefault("ylim", [0, 0.01])
@@ -1374,10 +1374,10 @@ class Plot:
         l_kws = _filter_dict(kwargs, plt.Line2D)
         if hasattr(self.res, "prms"):
             for comp in (0, 1):
-                pdf, axes = fastKDE.pdf(self.res.data[comp][0])
+                pdf_result = fastKDE.pdf(self.res.data[comp][0])
                 plt.plot(
-                    axes,
-                    np.cumsum(pdf) * np.diff(axes)[0:1],
+                    pdf_result.coords["var0"],
+                    np.cumsum(pdf_result.data) * np.diff(pdf_result.data)[0:1],
                     color=colors[comp],
                     label=cond_labels[comp],
                     **l_kws,
@@ -2021,3 +2021,10 @@ def _adjust_plt(**kwargs):
     plt.ylabel(kwargs.get("ylabel", ""), fontsize=kwargs.get("label_fontsize", 12))
     plt.xticks(fontsize=kwargs.get("tick_fontsize", 10))
     plt.yticks(fontsize=kwargs.get("tick_fontsize", 10))
+
+if __name__ == "__main__":
+
+    import pydmc
+
+    dat = pydmc.Sim(full_data=True)
+    dat.plot.summary()
